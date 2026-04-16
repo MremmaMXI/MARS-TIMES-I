@@ -990,7 +990,9 @@ const earthTempCache = new Map();
 const earthTempPending = new Set();
 let earthTempDisplay = 'calculando...';
 const EARTH_ASTRO_CACHE_MS = 60 * 60 * 1000;
-const HOURS_PER_SOL = 24;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_MTC_DAY = 24;
+const API_TIMEOUT_MS = 8000;
 const MAX_DISPLAY_GRAVITY = 9.8337;
 const earthAstroCache = new Map();
 let earthAstroDisplay = { sunrise:'N/D', sunset:'N/D', moonrise:'N/D', moonset:'N/D', moonphase:'N/D' };
@@ -1105,9 +1107,9 @@ function estimateEarthTempFallbackC(localHour, lat, northSeason){
   return seasonBase + daySwing - latPenalty;
 }
 function formatHHMM(hours){
-  const h = wrap24(hours);
-  const hh = Math.floor(h);
-  const mm = Math.floor((h - hh) * 60);
+  const wrappedHours = wrap24(hours);
+  const hh = Math.floor(wrappedHours);
+  const mm = Math.floor((wrappedHours - hh) * MINUTES_PER_HOUR);
   return `${pad(hh)}:${pad(mm)}`;
 }
 function formatHHMMSS(hours){
@@ -1165,8 +1167,8 @@ function renderMarsAstroEvents(now, panelPrefix){
   document.getElementById(`${panelPrefix}-phobos-set`).textContent = `${formatHHMM(wrap24(mtcH + phobos.setIn))} MTC`;
   document.getElementById(`${panelPrefix}-deimos-rise`).textContent = `${formatHHMM(wrap24(mtcH + deimos.riseIn))} MTC`;
   document.getElementById(`${panelPrefix}-deimos-set`).textContent =
-    deimos.setIn > HOURS_PER_SOL
-      ? `en ${(deimos.setIn / HOURS_PER_SOL).toFixed(1)} soles`
+    deimos.setIn > HOURS_PER_MTC_DAY
+      ? `en ${(deimos.setIn / HOURS_PER_MTC_DAY).toFixed(1)} soles`
       : `${formatHHMM(wrap24(mtcH + deimos.setIn))} MTC`;
 }
 function updateGravityDisplay(body, gValue){
@@ -2003,7 +2005,12 @@ async function refreshEarthAstroEvents(now){
   try{
     const lat = encodeURIComponent(String(city.lat));
     const lng = encodeURIComponent(String(city.lon));
-    const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`, { mode:'cors' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+    const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`, {
+      mode:'cors',
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
     if(!res.ok) throw new Error(`sunrise-sunset status ${res.status}`);
     const data = await res.json();
     const r = data?.results;
