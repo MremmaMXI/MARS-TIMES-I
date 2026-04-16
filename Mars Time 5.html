@@ -593,7 +593,7 @@ body.light canvas.clock-face{background:transparent;}
     <div class="tz-bar">
       <span class="tz-label">Zona:</span>
       <select id="tz-select" class="tz-select" onchange="onTzChange()"></select>
-      <button class="geo-btn" id="geo-btn" onclick="requestGeolocation()" title="Usar mi ubicación">Ubicacion</button>
+      <button class="geo-btn" id="geo-btn" onclick="requestGeolocation()" title="Usar mi ubicación" aria-label="Obtener ubicación actual">Ubicación</button>
     </div>
     <div class="tz-meta" id="earth-altpress">Altitud: — · Presión: —</div>
     <div class="clock-wrap">
@@ -719,7 +719,7 @@ body.light canvas.clock-face{background:transparent;}
         </div>
         <div class="cal-nav-center">
           <div class="cal-nav-title" id="lst-cal-title">Lunación 1</div>
-          <input type="number" id="lst-lun-input" class="lun-direct-input" min="1" max="13316" placeholder="# Lun" oninput="onLSTLunInput(this.value)" />
+          <input type="number" id="lst-lun-input" class="lun-direct-input" min="1" max="13316" placeholder="# Lun" aria-label="Número de lunación" oninput="onLSTLunInput(this.value)" />
           <div class="cal-nav-sub" id="lst-cal-sub"></div>
         </div>
         <div class="nav-group">
@@ -1200,6 +1200,15 @@ const MAX_DISPLAY_GRAVITY = 9.8337;
 const STAR_GENERATION_SEED = 42;
 const DEFAULT_STAR_COUNT = 120;
 const MOON_STAR_COUNT = 180;
+const DEGREES_PER_TIMEZONE_HOUR = 15;
+const SUN_RAY_LENGTH_VARIATION_FREQ = 2.3;
+const SUN_RAY_ALPHA_VARIATION_FREQ = 1.7;
+const SUN_RAY_BASE_LENGTH_MULTIPLIER = 5;
+const SUN_RAY_LENGTH_VARIATION_AMPLITUDE = 2;
+const SUN_RAY_BASE_ALPHA = 0.12;
+const SUN_RAY_ALPHA_VARIATION_AMPLITUDE = 0.06;
+const GEOLOCATION_TIMEOUT_MS = 10000;
+const GEOLOCATION_MAX_AGE_MS = 300000;
 const EARTH_BARO_FACTOR = 0.0000225577;
 const EARTH_BARO_EXPONENT = 5.25588;
 const earthAstroCache = new Map();
@@ -1226,6 +1235,8 @@ function getSimDate() {
   const elapsed = now - _simLastReal;
   _simLastReal = now;
   _simAccum += elapsed * simSpeed;
+  // Base real + offset manual + acumulado por velocidad.
+  // Se resta elapsed porque ese tramo ya fue incorporado en _simAccum arriba; sin esto se contabiliza dos veces.
   return new Date(Date.now() + simOffset + _simAccum - elapsed);
 }
 function tickSimTime() {
@@ -1275,9 +1286,12 @@ function updateSimDisplay() {
   document.getElementById('spd-realtime')?.classList.toggle('active', simSpeed === 1 && simRunning);
 }
 function onFineTime(panel) {
-  const h = parseInt(document.getElementById('fi-'+panel+'-h')?.value, 10) || 0;
-  const m = parseInt(document.getElementById('fi-'+panel+'-m')?.value, 10) || 0;
-  const s = parseInt(document.getElementById('fi-'+panel+'-s')?.value, 10) || 0;
+  const rawH = parseInt(document.getElementById('fi-'+panel+'-h')?.value, 10);
+  const rawM = parseInt(document.getElementById('fi-'+panel+'-m')?.value, 10);
+  const rawS = parseInt(document.getElementById('fi-'+panel+'-s')?.value, 10);
+  const h = Number.isFinite(rawH) ? Math.max(0, Math.min(23, rawH)) : 0;
+  const m = Number.isFinite(rawM) ? Math.max(0, Math.min(59, rawM)) : 0;
+  const s = Number.isFinite(rawS) ? Math.max(0, Math.min(59, rawS)) : 0;
   const d = new Date(SIM_NOW.getTime());
   d.setUTCHours(h, m, s, 0);
   jumpToDate(d);
@@ -1386,7 +1400,7 @@ function lunarSubsolarLongitude(date){
 function getLunarLocalSolarHours(date, lon){
   const subSolar = lunarSubsolarLongitude(date);
   const delta = ((lon - subSolar + 540) % 360) - 180;
-  return wrap24(12 + delta / 15);
+  return wrap24(12 + delta / DEGREES_PER_TIMEZONE_HOUR);
 }
 function getLunarLightAndTemp(date, poi){
   const localH = getLunarLocalSolarHours(date, poi.lon);
@@ -1444,7 +1458,7 @@ function getNextRiseSetHours(currentHour, periodHours){
   return { riseIn, setIn };
 }
 function getMarsReferenceOffset(){
-  return signedLongitude(selectedMarsLon) / 15;
+  return signedLongitude(selectedMarsLon) / DEGREES_PER_TIMEZONE_HOUR;
 }
 function lerp(a,b,t){ return a + (b-a)*t; }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
@@ -1573,7 +1587,7 @@ function getEarthFromMars(date, lat_mars, lon_mars) {
   const angle_diff = wrap360(L_earth_helio - L_mars_helio);
   const az = wrap360(angle_diff);
   const MSD = getMSD(date);
-  const mtcHour = getMTC(MSD) + lon_mars/15;
+  const mtcHour = getMTC(MSD) + lon_mars/DEGREES_PER_TIMEZONE_HOUR;
   const hourAngle = (mtcHour % 24 - 12) * 15;
   const latRad = lat_mars * Math.PI/180;
   const decEarth = EARTH_DECLINATION_DEGREES * Math.PI/180;
@@ -1761,8 +1775,8 @@ function drawRealisticSun(ctx, x, y, type, altitude) {
   ctx.translate(x, y);
   for (let i = 0; i < rayCount; i++) {
     const angle = (i / rayCount) * Math.PI * 2;
-    const rayLen = baseR * (5 + Math.sin(i * 2.3) * 2);
-    const rayAlpha = 0.12 + Math.sin(i * 1.7) * 0.06;
+    const rayLen = baseR * (SUN_RAY_BASE_LENGTH_MULTIPLIER + Math.sin(i * SUN_RAY_LENGTH_VARIATION_FREQ) * SUN_RAY_LENGTH_VARIATION_AMPLITUDE);
+    const rayAlpha = SUN_RAY_BASE_ALPHA + Math.sin(i * SUN_RAY_ALPHA_VARIATION_FREQ) * SUN_RAY_ALPHA_VARIATION_AMPLITUDE;
     ctx.beginPath();
     ctx.moveTo(Math.cos(angle) * baseR, Math.sin(angle) * baseR);
     ctx.lineTo(Math.cos(angle) * rayLen, Math.sin(angle) * rayLen);
@@ -1966,7 +1980,7 @@ function updateHorizons(now) {
 
   const MSD = getMSD(current);
   const mtcH = getMTC(MSD);
-  const localMtcH = wrap24(mtcH + signedLongitude(selectedMarsLon) / 15);
+  const localMtcH = wrap24(mtcH + signedLongitude(selectedMarsLon) / DEGREES_PER_TIMEZONE_HOUR);
   const mtcTotalSec = MSD * 88775.244;
   const marsSun = getSunPositionMars(localMtcH, selectedMarsLat);
   const phobos = getPhobosPosition(mtcTotalSec, selectedMarsLat, selectedMarsLon);
@@ -1984,7 +1998,7 @@ function updateHorizons(now) {
     'mars',
     marsDarkness
   );
-  const offset = signedLongitude(selectedMarsLon) / 15;
+  const offset = signedLongitude(selectedMarsLon) / DEGREES_PER_TIMEZONE_HOUR;
   const sunriseMtc = wrap24(6 - offset);
   const sunsetMtc = wrap24(18 - offset);
   const marsInfo = document.getElementById('horizon-mars-info');
@@ -2450,6 +2464,7 @@ function buildLSTCal(nLun, tLun, tLune, sel){
 }
 function onLSTLunInput(val) {
   const n = parseInt(val, 10);
+  if (!Number.isFinite(n)) return;
   if (n >= 1 && n <= MAX_LST_LUNATION) {
     lstNavLunation = n;
     lstNavLune = 1;
@@ -2814,7 +2829,8 @@ function requestGeolocation() {
     pos => {
       geoLat = pos.coords.latitude;
       geoLon = pos.coords.longitude;
-      const approxUtcOffset = Math.round(geoLon / 15);
+      // Aproximación astronómica por longitud; puede diferir de zonas horarias políticas/DST.
+      const approxUtcOffset = Math.round(geoLon / DEGREES_PER_TIMEZONE_HOUR);
       selectedUtcOffset = Math.max(-12, Math.min(12, approxUtcOffset));
       const sel = document.getElementById('tz-select');
       if (sel) {
@@ -2832,10 +2848,10 @@ function requestGeolocation() {
       onTzChange();
     },
     () => {
-      btn.textContent = 'Ubicacion';
+      btn.textContent = 'Ubicación';
       btn.disabled = false;
     },
-    { timeout: 10000, maximumAge: 300000 }
+    { timeout: GEOLOCATION_TIMEOUT_MS, maximumAge: GEOLOCATION_MAX_AGE_MS }
   );
 }
 
@@ -3152,7 +3168,7 @@ function renderRovers(now){
   if(marsMode === 'none') return;
   const mtcH = getMTC(getMSD(now));
   const html = ROVERS.map(r => {
-    const offset = signedLongitude(r.lon)/15;
+    const offset = signedLongitude(r.lon)/DEGREES_PER_TIMEZONE_HOUR;
     const localMtc = wrap24(mtcH + offset);
     const t = mtcToHMS(localMtc);
     const utcEq = mtcToHMS(mtcToEarthUtcEquivalentHours(localMtc));
@@ -3182,7 +3198,7 @@ function renderMarsPoi(now){
   if(marsHorizonSource === 'poi') selectedMarsLon = poi.lon;
   const mtcH = getMTC(getMSD(now));
   const ls = getMarsLs(now);
-  const offset = signedLongitude(selectedMarsLon)/15;
+  const offset = signedLongitude(selectedMarsLon)/DEGREES_PER_TIMEZONE_HOUR;
   const localMtc = wrap24(mtcH + offset);
   const local = mtcToHMS(localMtc);
   const seasons = getMarsSeason(ls);
