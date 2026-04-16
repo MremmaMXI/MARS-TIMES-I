@@ -961,7 +961,7 @@ function getEarthCityForOffset(offset){
   return EARTH_UTC_CITIES.reduce((best, c) =>
     (Math.abs(c.offset - offset) < Math.abs(best.offset - offset) ? c : best), EARTH_UTC_CITIES[0]);
 }
-function isValidCoordinate(lat, lon){
+function isValidEarthCoordinate(lat, lon){
   return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
 
@@ -1710,18 +1710,18 @@ async function refreshEarthTemperature(now){
     if(!cached) earthTempDisplay = fallbackTxt;
     return;
   }
-  if(!isValidCoordinate(city.lat, city.lon)){
-    earthTempDisplay = `${fallbackTxt} · coords inválidas`;
+  if(!isValidEarthCoordinate(city.lat, city.lon)){
+    earthTempDisplay = `${fallbackTxt} · invalid coordinates`;
     return;
   }
   earthTempPending.add(key);
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m&timezone=UTC`;
     const res = await fetch(url);
-    if(!res.ok) throw new Error(`open-meteo status ${res.status}: ${res.statusText || 'sin texto'}`);
+    if(!res.ok) throw new Error(`open-meteo status ${res.status}: ${res.statusText || 'no text'}`);
     const data = await res.json();
     const tempC = Number(data?.current?.temperature_2m);
-    if(Number.isNaN(tempC)) throw new Error('open-meteo payload inválido (temperature_2m no numérica)');
+    if(Number.isNaN(tempC)) throw new Error('invalid open-meteo payload (temperature_2m not numeric)');
     earthTempCache.set(key, { tempC, time: now.getTime() });
     const nearestHour = wrap24(now.getUTCHours() + city.offset + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600);
     const nearestFallback = estimateEarthTempFallbackC(nearestHour, city.lat, northSeason);
@@ -1729,7 +1729,7 @@ async function refreshEarthTemperature(now){
     earthTempDisplay = `${Math.round(adjusted)}°C / ${Math.round(adjusted*9/5+32)}°F (en tiempo real, ${city.name})`;
   } catch(error){
     earthTempDisplay = `${fallbackTxt} · fallback`;
-    console.warn('Temperatura Open-Meteo fallback:', error?.message || error);
+    console.warn('Open-Meteo temperature fallback:', error?.message || error);
   } finally {
     earthTempPending.delete(key);
   }
