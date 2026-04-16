@@ -499,7 +499,7 @@ body.light canvas.clock-face{background:transparent;}
     <div class="aux-info" id="earth-aux">
       <div>Estación: <strong id="earth-season">—</strong></div>
       <div class="axis">Eje: <strong id="earth-axis">23.44° respecto a la eclíptica</strong></div>
-      <div>Temp.: <strong id="earth-temp">—</strong></div>
+      <div>Temperatura: <strong id="earth-temp">—</strong></div>
     </div>
     <div class="info-row">
       <span>JDN: <strong id="earth-jdn">—</strong></span>
@@ -616,8 +616,8 @@ body.light canvas.clock-face{background:transparent;}
         <div class="axis">Eje: <strong id="lunar-axis">1.54° respecto a la eclíptica</strong></div>
         <div>Hora solar local: <strong id="lunar-poi-time">—</strong></div>
         <div>Estado: <strong id="lunar-poi-light">—</strong></div>
-      <div>Temp.: <strong id="lunar-poi-temp">—</strong></div>
-      <div>Coord.: <strong id="lunar-poi-coords">—</strong></div>
+        <div>Temperatura: <strong id="lunar-poi-temp">—</strong></div>
+        <div>Coord.: <strong id="lunar-poi-coords">—</strong></div>
     </div>
     <div class="gravity-section">
       <div class="gravity-label">Gravedad —
@@ -677,7 +677,7 @@ body.light canvas.clock-face{background:transparent;}
     <div class="aux-info">
       <div>Estación: <strong id="mars-season">—</strong></div>
       <div class="axis">Eje: <strong id="mars-axis">25.19° respecto a la eclíptica</strong></div>
-      <div>Temp.: <strong id="mars-temp">—</strong></div>
+      <div>Temperatura: <strong id="mars-temp">—</strong></div>
     </div>
     <div class="info-row">
       <span>MSD: <strong id="mars-msd">—</strong></span>
@@ -762,7 +762,7 @@ body.light canvas.clock-face{background:transparent;}
     <div class="aux-info">
       <div>Estación: <strong id="darian-season">—</strong></div>
       <div class="axis">Eje: <strong id="darian-axis">25.19° respecto a la eclíptica</strong></div>
-      <div>Temp.: <strong id="darian-temp">—</strong></div>
+      <div>Temperatura: <strong id="darian-temp">—</strong></div>
     </div>
     <div class="info-row">
       <span>MSD: <strong id="darian-msd">—</strong></span>
@@ -990,6 +990,8 @@ const earthTempCache = new Map();
 const earthTempPending = new Set();
 let earthTempDisplay = 'calculando...';
 const EARTH_ASTRO_CACHE_MS = 60 * 60 * 1000;
+const HOURS_PER_SOL = 24;
+const MAX_DISPLAY_GRAVITY = 9.8337;
 const earthAstroCache = new Map();
 let earthAstroDisplay = { sunrise:'N/D', sunset:'N/D', moonrise:'N/D', moonset:'N/D', moonphase:'N/D' };
 let selectedEarthGrav = EARTH_GRAVITY_REGIONS[2].id;
@@ -1141,7 +1143,7 @@ function computeMoonRiseSetFromSun(phase, sunrise, sunset){
 function getNextRiseSetHours(currentHour, periodHours){
   const phase = ((currentHour % periodHours) + periodHours) % periodHours;
   const riseIn = phase === 0 ? 0 : periodHours - phase;
-  const setIn = phase < periodHours / 2 ? (periodHours / 2 - phase) : (periodHours * 1.5 - phase);
+  const setIn = phase < periodHours / 2 ? (periodHours / 2 - phase) : (periodHours + periodHours / 2 - phase);
   return { riseIn, setIn };
 }
 function getMarsReferenceOffset(){
@@ -1163,12 +1165,14 @@ function renderMarsAstroEvents(now, panelPrefix){
   document.getElementById(`${panelPrefix}-phobos-set`).textContent = `${formatHHMM(wrap24(mtcH + phobos.setIn))} MTC`;
   document.getElementById(`${panelPrefix}-deimos-rise`).textContent = `${formatHHMM(wrap24(mtcH + deimos.riseIn))} MTC`;
   document.getElementById(`${panelPrefix}-deimos-set`).textContent =
-    deimos.setIn > 24 ? `en ${(deimos.setIn/24).toFixed(1)} soles` : `${formatHHMM(wrap24(mtcH + deimos.setIn))} MTC`;
+    deimos.setIn > HOURS_PER_SOL
+      ? `en ${(deimos.setIn / HOURS_PER_SOL).toFixed(1)} soles`
+      : `${formatHHMM(wrap24(mtcH + deimos.setIn))} MTC`;
 }
 function updateGravityDisplay(body, gValue){
   const ratio = gValue / 9.80665;
   const val = `${gValue.toFixed(4)} m/s² · ${ratio.toFixed(3)} gT`;
-  const fillPct = Math.max(0, Math.min(100, (gValue / 9.8337) * 100));
+  const fillPct = Math.max(0, Math.min(100, (gValue / MAX_DISPLAY_GRAVITY) * 100));
   document.getElementById(`${body}-grav-val`).textContent = val;
   document.getElementById(`${body}-grav-fill`).style.width = `${fillPct}%`;
 }
@@ -1997,7 +2001,9 @@ async function refreshEarthAstroEvents(now){
     return;
   }
   try{
-    const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${city.lat}&lng=${city.lon}&formatted=0`, { mode:'cors' });
+    const lat = encodeURIComponent(String(city.lat));
+    const lng = encodeURIComponent(String(city.lon));
+    const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`, { mode:'cors' });
     if(!res.ok) throw new Error(`sunrise-sunset status ${res.status}`);
     const data = await res.json();
     const r = data?.results;
@@ -2153,7 +2159,7 @@ function renderMarsPoi(now){
       <div>Sol sale local: <strong>${formatHHMM(sunriseLocal)} MTC</strong></div>
       <div>Sol pone local: <strong>${formatHHMM(sunsetLocal)} MTC</strong></div>
       <div>Estación (Ls ${ls.toFixed(1)}°): <strong>N ${seasons.north} · S ${seasons.south}</strong></div>
-      <div>Temp.: <strong>${Math.round(tempC)}°C</strong> (estimado modelo físico)</div>
+      <div>Temperatura: <strong>${Math.round(tempC)}°C</strong> (estimado modelo físico)</div>
     </div>`;
 }
 
