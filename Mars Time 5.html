@@ -56,31 +56,6 @@ header p{color:var(--sub);font-size:.78rem;margin-top:.3rem}
 .mode-btn.active-e{border-color:var(--ea);color:var(--ea);box-shadow:0 0 16px rgba(56,139,255,.25)}
 .mode-btn.active-d{border-color:var(--da);color:var(--da);box-shadow:0 0 16px rgba(192,132,252,.28)}
 .mode-btn.active-m{border-color:var(--ma);color:var(--ma);box-shadow:0 0 16px rgba(255,110,50,.28)}
-.timectl-bar {
-  display: flex; align-items: center; gap: .45rem;
-  justify-content: center; flex-wrap: wrap;
-  width: 100%; max-width: 900px;
-  padding: .5rem .8rem;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.timectl-label {
-  font-size: .7rem; color: var(--sub); letter-spacing: .08em;
-  text-transform: uppercase; white-space: nowrap;
-}
-.spd-btn {
-  padding: .3rem .65rem; border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.04);
-  color: var(--sub); font-size: .8rem; cursor: pointer;
-  transition: all .15s; line-height: 1;
-}
-.spd-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
-.spd-btn.active {
-  border-color: var(--sel-e); color: var(--sel-e);
-  background: rgba(0,229,255,.08);
-}
 .sim-dt-input {
   background: var(--panel); color: var(--text);
   border: 1px solid var(--border); border-radius: 8px;
@@ -88,10 +63,6 @@ header p{color:var(--sub);font-size:.78rem;margin-top:.3rem}
   outline: none;
 }
 .sim-dt-input:focus { border-color: var(--ea); }
-.sim-now-display {
-  font-size: .72rem; color: var(--sub);
-  letter-spacing: .04em; white-space: nowrap;
-}
 .fine-time-ctrl {
   display: flex; align-items: center; gap: .2rem;
   justify-content: center; z-index: 1;
@@ -554,6 +525,7 @@ body.light canvas.clock-face{background:transparent;}
   <button class="sync-btn" id="sync-toggle" onclick="toggleSync()">
     <span class="sync-dot"></span><span id="sync-label">Sincronizar calendarios</span>
   </button>
+  <input type="datetime-local" id="sim-datetime-input" class="sim-dt-input" oninput="onSimDatetimeInput(this.value)" title="Saltar a fecha y hora específica" />
   <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Modo claro" aria-label="Modo claro">
     <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -563,17 +535,6 @@ body.light canvas.clock-face{background:transparent;}
   <button class="mode-btn mode-earth active-e" id="btn-mode-earth" onclick="setMarsMode('none')">Terrestre</button>
   <button class="mode-btn mode-darian" id="btn-mode-darian" onclick="setMarsMode('darian')">Dariano</button>
   <button class="mode-btn mode-silin" id="btn-mode-silin" onclick="setMarsMode('silin')">Silin</button>
-</div>
-<div class="timectl-bar" id="timectl-global">
-  <span class="timectl-label">Tiempo global</span>
-  <button class="spd-btn" onclick="setSimSpeed(-3600)" title="Reversa x3600">&#9666;&#9666;</button>
-  <button class="spd-btn" onclick="setSimSpeed(-60)" title="Reversa x60">&#9666;</button>
-  <button class="spd-btn active" id="spd-realtime" onclick="resetToRealTime()" title="Tiempo real">&#9646;&#9646; Ahora</button>
-  <button class="spd-btn" onclick="setSimSpeed(60)" title="x60">&#9654;</button>
-  <button class="spd-btn" onclick="setSimSpeed(3600)" title="x3600">&#9654;&#9654;</button>
-  <button class="spd-btn" onclick="setSimSpeed(86400)" title="x1 día/s">&#9654;&#9654;&#9654;</button>
-  <input type="datetime-local" id="sim-datetime-input" class="sim-dt-input" oninput="onSimDatetimeInput(this.value)" />
-  <span class="sim-now-display" id="sim-now-display">—</span>
 </div>
 <div class="horizon-toggles" id="horizon-toggles">
   <span style="font-size:.72rem;color:var(--sub);letter-spacing:.06em">Horizonte:</span>
@@ -1222,80 +1183,54 @@ let earthObserverLon = -0.13;
 
 // ── NÚCLEO DEL TIEMPO SIMULADO ──
 let simOffset = 0;
-let simSpeed  = 1;
 let simRunning = true;
 let simFrozenAt = null;
-let _simLastReal = Date.now();
-let _simAccum    = 0;
 let SIM_NOW = new Date(Date.now());
 
 function getSimDate() {
   if (!simRunning && simFrozenAt !== null) return new Date(simFrozenAt);
-  const now = Date.now();
-  const elapsed = now - _simLastReal;
-  _simLastReal = now;
-  _simAccum += elapsed * simSpeed;
-  // Base real + offset manual + acumulado por velocidad.
-  // Se resta elapsed porque ese tramo ya fue incorporado en _simAccum arriba; sin esto se contabiliza dos veces.
-  return new Date(Date.now() + simOffset + _simAccum - elapsed);
+  return new Date(Date.now() + simOffset);
 }
 function tickSimTime() {
   SIM_NOW = getSimDate();
 }
 function resetToRealTime() {
   simOffset = 0;
-  simSpeed = 1;
   simRunning = true;
   simFrozenAt = null;
-  _simAccum = 0;
-  _simLastReal = Date.now();
   SIM_NOW = new Date(Date.now());
   syncAllCalendarsToSim();
+  updateSimDatetimeInput();
 }
 function jumpToDate(dateObj) {
+  if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return;
   simFrozenAt = dateObj.getTime();
   simRunning = false;
   simOffset = 0;
-  _simAccum = 0;
-  _simLastReal = Date.now();
   SIM_NOW = new Date(simFrozenAt);
-}
-function setSimSpeed(speed) {
-  const now = Date.now();
-  _simAccum += (now - _simLastReal) * simSpeed;
-  _simLastReal = now;
-  simSpeed = speed;
-  simRunning = true;
-  simFrozenAt = null;
+  syncAllCalendarsToSim();
+  updateSimDatetimeInput();
 }
 function onSimDatetimeInput(val) {
   if (!val) return;
   jumpToDate(new Date(val));
-  syncAllCalendarsToSim();
 }
-function updateSimDisplay() {
+function updateSimDatetimeInput() {
   const d = SIM_NOW;
   const iso = d.toISOString().slice(0,16);
   const inp = document.getElementById('sim-datetime-input');
   if (inp && document.activeElement !== inp) inp.value = iso;
-  const disp = document.getElementById('sim-now-display');
-  if (disp) {
-    const spd = simSpeed === 1 ? 'Tiempo real' : (simSpeed > 0 ? 'x'+simSpeed : 'Reversa x'+Math.abs(simSpeed));
-    disp.textContent = spd;
-  }
-  document.getElementById('spd-realtime')?.classList.toggle('active', simSpeed === 1 && simRunning);
 }
 function onFineTime(panel) {
   const rawH = parseInt(document.getElementById('fi-'+panel+'-h')?.value, 10);
   const rawM = parseInt(document.getElementById('fi-'+panel+'-m')?.value, 10);
   const rawS = parseInt(document.getElementById('fi-'+panel+'-s')?.value, 10);
-  const h = Number.isFinite(rawH) ? Math.max(0, Math.min(23, rawH)) : 0;
-  const m = Number.isFinite(rawM) ? Math.max(0, Math.min(59, rawM)) : 0;
-  const s = Number.isFinite(rawS) ? Math.max(0, Math.min(59, rawS)) : 0;
   const d = new Date(SIM_NOW.getTime());
+  const h = Number.isFinite(rawH) ? Math.max(0, Math.min(23, rawH)) : d.getUTCHours();
+  const m = Number.isFinite(rawM) ? Math.max(0, Math.min(59, rawM)) : d.getUTCMinutes();
+  const s = Number.isFinite(rawS) ? Math.max(0, Math.min(59, rawS)) : d.getUTCSeconds();
   d.setUTCHours(h, m, s, 0);
   jumpToDate(d);
-  syncAllCalendarsToSim();
 }
 function updateFineInputs() {
   const d = SIM_NOW;
@@ -2477,28 +2412,52 @@ function onLSTLunInput(val) {
 
 function syncAllCalendarsToSim() {
   const d = SIM_NOW;
-  eNavYear = d.getUTCFullYear();
-  eNavMonth = d.getUTCMonth() + 1;
-  eSelDay = d.getUTCDate();
-  eNavLive = false;
+  const tY = d.getUTCFullYear();
+  const tM = d.getUTCMonth() + 1;
+  const tD = d.getUTCDate();
+  if (eNavLive) {
+    eNavYear = tY;
+    eNavMonth = tM;
+    eSelDay = tD;
+    buildEarthCal(tY, tM, tY, tM, tD, tD);
+  } else {
+    buildEarthCal(eNavYear, eNavMonth, tY, tM, tD, eSelDay);
+  }
 
   const ts = solsFromEpoch(d);
   const sil = silinFromTotalSols(ts);
-  mNavYear = sil.year; mNavMonth = sil.month; mSelSol = sil.sol; mNavLive = false;
+  if (mNavLive) {
+    mNavYear = sil.year;
+    mNavMonth = sil.month;
+    mSelSol = sil.sol;
+    buildMarsCal(sil.year, sil.month, sil.year, sil.month, sil.sol, sil.sol);
+  } else {
+    buildMarsCal(mNavYear, mNavMonth, sil.year, sil.month, sil.sol, mSelSol);
+  }
 
   const dar = darFromTotalSols(ts);
-  dNavYear = dar.year; dNavMonth = dar.month; dSelSol = dar.sol; dNavLive = false;
+  if (dNavLive) {
+    dNavYear = dar.year;
+    dNavMonth = dar.month;
+    dSelSol = dar.sol;
+    buildDarCal(dar.year, dar.month, dar.year, dar.month, dar.sol, dar.sol);
+  } else {
+    buildDarCal(dNavYear, dNavMonth, dar.year, dar.month, dar.sol, dSelSol);
+  }
 
   const lstSec = (d.getTime() - LST_EPOCH_MS) / 1000;
-  lstNavLunation = Math.floor(lstSec / LUNATION_SEC) + 1;
-  lstNavLune = Math.floor((lstSec % LUNATION_SEC) / LUNE_SEC) + 1;
-  lstSelLune = lstNavLune;
-  lstNavLive = false;
+  const currentLunation = Math.max(1, Math.floor(lstSec / LUNATION_SEC) + 1);
+  const secInLunation = ((lstSec % LUNATION_SEC) + LUNATION_SEC) % LUNATION_SEC;
+  const currentLune = Math.max(1, Math.floor(secInLunation / LUNE_SEC) + 1);
+  if (lstNavLive) {
+    lstNavLunation = currentLunation;
+    lstNavLune = currentLune;
+    lstSelLune = currentLune;
+    buildLSTCal(currentLunation, currentLunation, currentLune, currentLune);
+  } else {
+    buildLSTCal(lstNavLunation, currentLunation, currentLune, lstSelLune);
+  }
 
-  buildEarthCal(eNavYear, eNavMonth, eNavYear, eNavMonth, eSelDay, eSelDay);
-  buildMarsCal(mNavYear, mNavMonth, sil.year, sil.month, sil.sol, mSelSol);
-  buildDarCal(dNavYear, dNavMonth, dar.year, dar.month, dar.sol, dSelSol);
-  buildLSTCal(lstNavLunation, lstNavLunation, lstNavLune, lstSelLune);
   tick();
 }
 
@@ -2604,73 +2563,48 @@ function syncFromDar(y, m, s, withSel){
    CLICK HANDLERS
 ══════════════════════════════════════════════ */
 function onEarthClick(d){
-  eSelDay = (eSelDay===d) ? null : d; eNavLive = false;
-  const now = SIM_NOW; renderEarth(now);
+  eSelDay = d; eNavLive = false;
   const txt = eSelDay
     ? EARTH_DAYS_FULL[new Date(Date.UTC(eNavYear,eNavMonth-1,eSelDay)).getUTCDay()]
       + `, ${eSelDay} de ${EARTH_MONTHS[eNavMonth-1]} de ${eNavYear}` : null;
   setSelInfo('earth', txt);
-  if(eSelDay){
-    jumpToDate(new Date(Date.UTC(eNavYear, eNavMonth-1, eSelDay)));
-    syncAllCalendarsToSim();
-    if(syncMode){
-      syncFromEarth(eNavYear, eNavMonth, eSelDay, true);
-    }
-    const sil = earthToSilin(eNavYear,eNavMonth,eSelDay);
-    setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
-    const dar = earthToDar(eNavYear,eNavMonth,eSelDay);
-    setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
-  }
+  jumpToDate(new Date(Date.UTC(eNavYear, eNavMonth-1, eSelDay)));
+  const sil = earthToSilin(eNavYear,eNavMonth,eSelDay);
+  setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
+  const dar = earthToDar(eNavYear,eNavMonth,eSelDay);
+  setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
 }
 
 function onMarsClick(sol){
-  mSelSol = (mSelSol===sol) ? null : sol; mNavLive = false;
-  const now = SIM_NOW; renderMars(now);
+  mSelSol = sol; mNavLive = false;
   const wd = (solsAtMonthStart(mNavYear,mNavMonth) + (mSelSol||1) - 1) % 7;
   const txt = mSelSol ? `${MARS_DAYS_FULL[wd]}, Sol ${mSelSol} de ${MARS_MONTHS[mNavMonth-1]}, MY ${mNavYear}` : null;
   setSelInfo('mars', txt);
-  if(mSelSol){
-    jumpToDate(silinToEarth(mNavYear,mNavMonth,mSelSol));
-    syncAllCalendarsToSim();
-    if(syncMode){
-      syncFromSilin(mNavYear, mNavMonth, mSelSol, true);
-    }
-    const ed = silinToEarth(mNavYear,mNavMonth,mSelSol);
-    setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
-    const dar = silinToDar(mNavYear,mNavMonth,mSelSol);
-    setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
-  }
+  jumpToDate(silinToEarth(mNavYear,mNavMonth,mSelSol));
+  const ed = silinToEarth(mNavYear,mNavMonth,mSelSol);
+  setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
+  const dar = silinToDar(mNavYear,mNavMonth,mSelSol);
+  setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
 }
 
 function onDarClick(sol){
-  dSelSol = (dSelSol===sol) ? null : sol; dNavLive = false;
-  const now = SIM_NOW; renderDar(now);
+  dSelSol = sol; dNavLive = false;
   const wd = (darSolsAtMonthStart(dNavYear,dNavMonth) + (dSelSol||1) - 1 + 1) % 7;
   const txt = dSelSol ? `${DAR_DAYS_FULL[wd]}, Sol ${dSelSol} de ${DAR_MONTHS[dNavMonth-1]}, ${dNavYear}` : null;
   setSelInfo('darian', txt);
-  if(dSelSol){
-    jumpToDate(darToEarth(dNavYear,dNavMonth,dSelSol));
-    syncAllCalendarsToSim();
-    if(syncMode){
-      syncFromDar(dNavYear, dNavMonth, dSelSol, true);
-    }
-    const ed = darToEarth(dNavYear,dNavMonth,dSelSol);
-    setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
-    const sil = darToSilin(dNavYear,dNavMonth,dSelSol);
-    setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
-  }
+  jumpToDate(darToEarth(dNavYear,dNavMonth,dSelSol));
+  const ed = darToEarth(dNavYear,dNavMonth,dSelSol);
+  setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
+  const sil = darToSilin(dNavYear,dNavMonth,dSelSol);
+  setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
 }
 
 function onLSTClick(lune){
-  lstSelLune = (lstSelLune===lune) ? null : lune; lstNavLive = false;
-  const now = SIM_NOW; renderLST(now);
+  lstSelLune = lune; lstNavLive = false;
   const txt = lstSelLune ? `Lunación ${lstNavLunation}, Lúnio ${lstSelLune}` : null;
   setSelInfo('lst', txt);
-  if(lstSelLune){
-    const secFromEpoch = ((lstNavLunation - 1) * LUNATION_SEC) + ((lstSelLune - 1) * LUNE_SEC);
-    jumpToDate(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
-    syncAllCalendarsToSim();
-  }
+  const secFromEpoch = ((lstNavLunation - 1) * LUNATION_SEC) + ((lstSelLune - 1) * LUNE_SEC);
+  jumpToDate(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
 }
 
 /* ══════════════════════════════════════════════
@@ -2687,22 +2621,19 @@ function setSelInfo(panel, txt){
    NOW BUTTONS
 ══════════════════════════════════════════════ */
 function goEarthNow(){
-  resetToRealTime(); eSelDay=null;
-  setSelInfo('earth',null); syncAllCalendarsToSim(); eNavLive=true;
+  eNavLive = true; mNavLive = true; dNavLive = true; lstNavLive = true;
+  eSelDay = null; mSelSol = null; dSelSol = null; lstSelLune = null;
+  setSelInfo('earth',null); setSelInfo('mars',null); setSelInfo('darian',null); setSelInfo('lst',null);
+  resetToRealTime();
 }
 function goMarsNow(){
-  resetToRealTime(); mSelSol=null;
-  setSelInfo('mars',null); syncAllCalendarsToSim(); mNavLive=true;
+  goEarthNow();
 }
 function goDarianNow(){
-  resetToRealTime(); dSelSol=null;
-  setSelInfo('darian',null); syncAllCalendarsToSim(); dNavLive=true;
+  goEarthNow();
 }
 function goLSTNow(){
-  jumpToDate(new Date(Date.now()));
-  resetToRealTime();
-  lstSelLune=null;
-  setSelInfo('lst',null); syncAllCalendarsToSim(); lstNavLive=true;
+  goEarthNow();
 }
 
 /* ══════════════════════════════════════════════
@@ -3334,7 +3265,7 @@ function tick(){
     if(dNavLive){ const dar=darFromTotalSols(solsFromEpoch(now)); dNavYear=dar.year; dNavMonth=dar.month; }
     renderDar(now);
   }
-  updateSimDisplay();
+  updateSimDatetimeInput();
   updateFineInputs();
 }
 
