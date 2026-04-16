@@ -1190,8 +1190,8 @@ function hexToRgb(hex){
   return { r:(val>>16)&255, g:(val>>8)&255, b:val&255 };
 }
 function rgbToHex(r,g,b){
-  const c = n => Math.round(clamp(n,0,255)).toString(16).padStart(2,'0');
-  return `#${c(r)}${c(g)}${c(b)}`;
+  const componentToHex = n => Math.round(clamp(n,0,255)).toString(16).padStart(2,'0');
+  return `#${componentToHex(r)}${componentToHex(g)}${componentToHex(b)}`;
 }
 function blendHex(a,b,t){
   const ca = hexToRgb(a), cb = hexToRgb(b);
@@ -1272,6 +1272,7 @@ function getMarsPositionFromEarth(date, lat, lon) {
 }
 function getSunPositionMars(mtcHour, lat_mars) {
   const hourAngle = (mtcHour - 12) * 15;
+  // Simplificación intencional: declinación solar marciana fija para evitar sobrecoste en cálculo en tiempo real.
   const dec_sun_mars = 0;
   const latRad = lat_mars * Math.PI / 180;
   const haRad = hourAngle * Math.PI / 180;
@@ -1280,22 +1281,27 @@ function getSunPositionMars(mtcHour, lat_mars) {
   return { azimuth: wrap360(az * 180/Math.PI), altitude: alt * 180/Math.PI };
 }
 function getPhobosPosition(mtcTotalSeconds, lat_mars, lon_mars) {
+  const PHOBOS_MAX_ALTITUDE = 70;
+  const PHOBOS_LATITUDE_FACTOR = 0.8;
   const PHOBOS_PERIOD_SOL = 0.31891;
   const SOL_S = 88775.244;
   const angle = wrap360(mtcTotalSeconds / (PHOBOS_PERIOD_SOL * SOL_S) * 360 + lon_mars);
-  const alt = 70 - Math.abs(lat_mars) * 0.8;
+  const alt = PHOBOS_MAX_ALTITUDE - Math.abs(lat_mars) * PHOBOS_LATITUDE_FACTOR;
   const az = wrap360(360 - angle);
   return { azimuth: az, altitude: Math.max(-10, alt * Math.cos((angle - 180) * Math.PI/180)) };
 }
 function getDeimosPosition(mtcTotalSeconds, lat_mars, lon_mars) {
+  const DEIMOS_MAX_ALTITUDE = 60;
+  const DEIMOS_LATITUDE_FACTOR = 0.7;
   const DEIMOS_PERIOD_SOL = 1.26244;
   const SOL_S = 88775.244;
   const angle = wrap360(mtcTotalSeconds / (DEIMOS_PERIOD_SOL * SOL_S) * 360 + lon_mars * 0.5);
-  const alt = 60 - Math.abs(lat_mars) * 0.7;
+  const alt = DEIMOS_MAX_ALTITUDE - Math.abs(lat_mars) * DEIMOS_LATITUDE_FACTOR;
   const az = wrap360(angle);
   return { azimuth: az, altitude: Math.max(-5, alt * Math.cos((angle - 90) * Math.PI/180)) };
 }
 function getEarthFromMars(date, lat_mars, lon_mars) {
+  const EARTH_DECLINATION_DEGREES = -23;
   const JD = date.getTime()/86400000 + 2440587.5;
   const d = JD - 2451545.0;
   const L_earth_helio = wrap360(100.464 + 0.9856474*d);
@@ -1306,7 +1312,7 @@ function getEarthFromMars(date, lat_mars, lon_mars) {
   const mtcHour = getMTC(MSD) + lon_mars/15;
   const hourAngle = (mtcHour % 24 - 12) * 15;
   const latRad = lat_mars * Math.PI/180;
-  const decEarth = -23 * Math.PI/180;
+  const decEarth = EARTH_DECLINATION_DEGREES * Math.PI/180;
   const haRad = (hourAngle + angle_diff/4) * Math.PI/180;
   const alt = Math.asin(Math.sin(latRad)*Math.sin(decEarth) + Math.cos(latRad)*Math.cos(decEarth)*Math.cos(haRad));
   return { azimuth: az, altitude: alt * 180/Math.PI };
