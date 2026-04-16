@@ -733,11 +733,11 @@ const DAR_MONTHS_S = [
 const DAR_DAYS_FULL  = ['Sol Solis','Sol Lunae','Sol Martis','Sol Mercurii','Sol Jovis','Sol Veneris','Sol Saturni'];
 const DAR_DAYS_SHORT = ['Sol','Lun','Mar','Mer','Jov','Ven','Sat'];
 const ROVERS = [
-  { name:'Perseverance', icon:'🟢', status:'Activo', lat:18.4446, lon:77.4509, region:'Jezero Crater', landingUTC:Date.UTC(2021,1,18,0,0,0) },
-  { name:'Curiosity', icon:'🟢', status:'Activo', lat:-4.5895, lon:137.4417, region:'Gale Crater', landingUTC:Date.UTC(2012,7,6,0,0,0) },
-  { name:'InSight', icon:'⚫', status:'Inactivo (ref)', lat:4.5024, lon:135.6234, region:'Elysium Planitia', landingUTC:Date.UTC(2018,10,26,0,0,0) },
-  { name:'Opportunity', icon:'⚫', status:'Inactivo (ref)', lat:-1.9462, lon:354.4734, region:'Meridiani Planum', landingUTC:Date.UTC(2004,0,25,0,0,0) },
-  { name:'Spirit', icon:'⚫', status:'Inactivo (ref)', lat:-14.5684, lon:175.4729, region:'Gusev Crater', landingUTC:Date.UTC(2004,0,4,0,0,0) }
+  { name:'Perseverance', icon:'🟢', status:'Activo', active:true, lat:18.4446, lon:77.4509, region:'Jezero Crater', landingUTC:Date.UTC(2021,1,18,0,0,0) },
+  { name:'Curiosity', icon:'🟢', status:'Activo', active:true, lat:-4.5895, lon:137.4417, region:'Gale Crater', landingUTC:Date.UTC(2012,7,6,0,0,0) },
+  { name:'InSight', icon:'⚫', status:'Inactivo (ref)', active:false, lat:4.5024, lon:135.6234, region:'Elysium Planitia', landingUTC:Date.UTC(2018,10,26,0,0,0) },
+  { name:'Opportunity', icon:'⚫', status:'Inactivo (ref)', active:false, lat:-1.9462, lon:354.4734, region:'Meridiani Planum', landingUTC:Date.UTC(2004,0,25,0,0,0) },
+  { name:'Spirit', icon:'⚫', status:'Inactivo (ref)', active:false, lat:-14.5684, lon:175.4729, region:'Gusev Crater', landingUTC:Date.UTC(2004,0,4,0,0,0) }
 ];
 
 /* ══════════════════════════════════════════════
@@ -1524,13 +1524,13 @@ function renderLST(now){
 
 function renderLTC(now){
   const elapsedSec = (now.getTime() - J2000_REF_MS) / 1000;
-  const offsetMs = elapsedSec * (LTC_RATE_US_PER_S / 1000);
+  const offsetMs = elapsedSec * (LTC_RATE_US_PER_S / 1e6);
   const ltcDate = new Date(now.getTime() + offsetMs);
   const h = ltcDate.getUTCHours(), m = ltcDate.getUTCMinutes(), s = ltcDate.getUTCSeconds();
   const isLight = document.body.classList.contains('light');
   draw24hClock('canvas-ltc', h, m, s, isLight ? LST_LIGHT : LST_DARK);
   document.getElementById('digital-ltc').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  document.getElementById('ltc-date').textContent = `${pad(ltcDate.getUTCDate())}/${pad(ltcDate.getUTCMonth()+1)}/${ltcDate.getUTCFullYear()} ${pad(h)}:${pad(m)}:${pad(s)} UTC-LTC`;
+  document.getElementById('ltc-date').textContent = `${pad(ltcDate.getUTCDate())}/${pad(ltcDate.getUTCMonth()+1)}/${ltcDate.getUTCFullYear()} UTC-LTC`;
   document.getElementById('ltc-offset').textContent = `${Math.round(offsetMs).toLocaleString('es-MX')} ms`;
 }
 
@@ -1541,7 +1541,7 @@ function renderRovers(now){
     const localMtc = wrap24(mtcH + (r.lon/15));
     const t = mtcToHMS(localMtc);
     const missionSols = Math.max(0, Math.floor((now.getTime() - r.landingUTC) / (MARS_SOL_RATIO * 86400000)));
-    const stCls = r.status.toLowerCase().includes('activo') && !r.status.toLowerCase().includes('inactivo') ? 'active' : 'inactive';
+    const stCls = r.active ? 'active' : 'inactive';
     return `<article class="rover-card">
       <div class="rover-title">
         <span>${r.icon} ${r.name}</span>
