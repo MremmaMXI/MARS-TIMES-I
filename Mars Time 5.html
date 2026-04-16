@@ -217,6 +217,15 @@ body.light .tz-select{background:#f0f2ff}
 }
 .info-row span{white-space:nowrap}
 .info-row strong{color:var(--text)}
+.horizon-wrap{width:100%;z-index:1}
+.horizon-canvas{
+  width:100%;height:110px;display:block;border-radius:10px;
+  border:1px solid rgba(255,255,255,.08);background:#06080f
+}
+.horizon-info{
+  width:100%;font-size:.68rem;color:var(--sub);line-height:1.35;
+  border-top:1px solid var(--border);padding-top:.45rem;z-index:1
+}
 .lst-sec-ref{
   width:100%;padding:.5rem .6rem;border-radius:10px;
   background:rgba(0,200,170,.06);border:1px solid rgba(0,200,170,.12);
@@ -373,6 +382,8 @@ body.light .cal-nav-title:hover{background:rgba(0,0,0,.06)}
 body.light .dp-year-lbl:hover,
 body.light .dp-cell:hover{background:rgba(0,0,0,.08)}
 body.light canvas.clock-face{background:transparent;}
+body.light .horizon-canvas{border-color:rgba(0,0,0,.14);background:#dfe9ff}
+body.light .horizon-info{color:#4e587a}
 
 /* ═══════════════════════════════════════
    MOBILE RESPONSIVE
@@ -417,6 +428,8 @@ body.light canvas.clock-face{background:transparent;}
   .mini-cal th{ font-size:.65rem; }
 
   .info-row{ font-size:.68rem; }
+  .horizon-canvas{height:80px}
+  .horizon-info{font-size:.64rem}
 
   .mars-sec-ref, .lst-sec-ref{ font-size:.64rem; }
   .rovers-head{flex-direction:column;align-items:flex-start}
@@ -475,6 +488,10 @@ body.light canvas.clock-face{background:transparent;}
       <canvas class="clock-face" id="canvas-earth" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-earth">00:00:00</div>
     </div>
+    <div class="horizon-wrap">
+      <canvas id="horizon-earth" class="horizon-canvas" width="560" height="110"></canvas>
+    </div>
+    <div class="horizon-info" id="horizon-earth-info">Sol: Az 000° Alt 0° | Luna: Az 000° Alt 0° | Marte: Az 000° Alt 0°</div>
     <div class="date-block">
       <div class="day-num" id="earth-day">1</div>
       <div class="month-year" id="earth-month-year">Enero 2026</div>
@@ -611,6 +628,10 @@ body.light canvas.clock-face{background:transparent;}
         <span>Referencia: <strong id="ltc-ref">J2000</strong></span>
       </div>
     </div>
+      <div class="horizon-wrap">
+        <canvas id="horizon-moon" class="horizon-canvas" width="560" height="110"></canvas>
+      </div>
+      <div class="horizon-info" id="horizon-moon-info">Sol: día lunar | Tierra: Az 000° Alt 0° | Marte: Az 000° Alt 0°</div>
       <div class="aux-info">
         <div>Estación: <strong id="lunar-season">Sin estaciones (eje ~1.54°)</strong></div>
         <div class="axis">Eje: <strong id="lunar-axis">1.54° respecto a la eclíptica</strong></div>
@@ -642,6 +663,10 @@ body.light canvas.clock-face{background:transparent;}
       <canvas class="clock-face" id="canvas-mars" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-mars">00:00:00</div>
     </div>
+    <div class="horizon-wrap">
+      <canvas id="horizon-mars" class="horizon-canvas" width="560" height="110"></canvas>
+    </div>
+    <div class="horizon-info" id="horizon-mars-info">Sol: sale --:-- pone --:-- | Fobos: Az 000° (O→E) | Deimos: Az 000° | Tierra: Az 000° Alt 0°</div>
     <div class="mars-sec-ref">
       <div class="sec-ref-label">1 s Tierra = 1.02749125 s Marte · +2.749% más lento</div>
       <div class="sec-ref-track-wrap">
@@ -727,6 +752,10 @@ body.light canvas.clock-face{background:transparent;}
       <canvas class="clock-face" id="canvas-darian" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-darian">00:00:00</div>
     </div>
+    <div class="horizon-wrap">
+      <canvas id="horizon-darian" class="horizon-canvas" width="560" height="110"></canvas>
+    </div>
+    <div class="horizon-info" id="horizon-darian-info">Sol: sale --:-- pone --:-- | Fobos: Az 000° (O→E) | Deimos: Az 000° | Tierra: Az 000° Alt 0°</div>
     <div class="mars-sec-ref">
       <div class="sec-ref-label">1 s Tierra = 1.02749125 s Marte · +2.749% más lento</div>
       <div class="sec-ref-track-wrap">
@@ -1152,6 +1181,353 @@ function getMarsReferenceOffset(){
   const poi = MARS_POIS[selectedMarsPoi];
   if(!poi) return 0;
   return signedLongitude(poi.lon) / 15;
+}
+function lerp(a,b,t){ return a + (b-a)*t; }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function hexToRgb(hex){
+  const clean = hex.replace('#','');
+  const val = parseInt(clean,16);
+  return { r:(val>>16)&255, g:(val>>8)&255, b:val&255 };
+}
+function rgbToHex(r,g,b){
+  const componentToHex = n => Math.round(clamp(n,0,255)).toString(16).padStart(2,'0');
+  return `#${componentToHex(r)}${componentToHex(g)}${componentToHex(b)}`;
+}
+function blendHex(a,b,t){
+  const ca = hexToRgb(a), cb = hexToRgb(b);
+  return rgbToHex(lerp(ca.r,cb.r,t), lerp(ca.g,cb.g,t), lerp(ca.b,cb.b,t));
+}
+function formatAzAlt(pos, withBelow=false){
+  const az = Math.round(wrap360(pos.azimuth));
+  const alt = Math.round(pos.altitude);
+  if(withBelow && pos.altitude < 0){
+    return `Az ${pad(az,3)}° Alt ${alt}° (bajo horizonte)`;
+  }
+  return `Az ${pad(az,3)}° Alt ${alt}°`;
+}
+function getSunPosition(date, lat, lon) {
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const n = JD - 2451545.0;
+  const L = wrap360(280.460 + 0.9856474 * n);
+  const g = wrap360(357.528 + 0.9856003 * n) * Math.PI / 180;
+  const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2*g)) * Math.PI / 180;
+  const epsilon = 23.439 * Math.PI / 180;
+  const sinDec = Math.sin(epsilon) * Math.sin(lambda);
+  const dec = Math.asin(sinDec);
+  const utcH = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600;
+  const GMST = (6.697375 + 0.0657098242 * n + utcH) % 24;
+  const LST = wrap360(GMST * 15 + lon);
+  const RA = wrap360(Math.atan2(Math.cos(epsilon) * Math.sin(lambda), Math.cos(lambda)) * 180 / Math.PI);
+  const HA = wrap360(LST - RA);
+  const HArad = HA * Math.PI / 180;
+  const latRad = lat * Math.PI / 180;
+  const alt = Math.asin(Math.sin(latRad)*Math.sin(dec) + Math.cos(latRad)*Math.cos(dec)*Math.cos(HArad));
+  const az = Math.atan2(-Math.cos(dec)*Math.sin(HArad), Math.sin(dec)*Math.cos(latRad) - Math.cos(dec)*Math.cos(HArad)*Math.sin(latRad));
+  return { azimuth: wrap360(az * 180 / Math.PI), altitude: alt * 180 / Math.PI };
+}
+function getMoonPosition(date, lat, lon) {
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const L0 = 218.316 + 13.176396 * (JD - 2451545.0);
+  const M = 134.963 + 13.064993 * (JD - 2451545.0);
+  const F = 93.272 + 13.229350 * (JD - 2451545.0);
+  const Mrad = M * Math.PI / 180;
+  const Frad = F * Math.PI / 180;
+  const lon_moon = L0 + 6.289 * Math.sin(Mrad);
+  const lat_moon = 5.128 * Math.sin(Frad);
+  const lambdaRad = lon_moon * Math.PI / 180;
+  const betaRad = lat_moon * Math.PI / 180;
+  const epsilon = 23.439 * Math.PI / 180;
+  const ra = Math.atan2(Math.sin(lambdaRad)*Math.cos(epsilon) - Math.tan(betaRad)*Math.sin(epsilon), Math.cos(lambdaRad));
+  const dec = Math.asin(Math.sin(betaRad)*Math.cos(epsilon) + Math.cos(betaRad)*Math.sin(epsilon)*Math.sin(lambdaRad));
+  const utcH = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600;
+  const GMST = (6.697375 + 0.0657098242 * (JD-2451545.0) + utcH) % 24;
+  const LST = wrap360(GMST * 15 + lon);
+  const HA = wrap360(LST - ra * 180 / Math.PI);
+  const HArad = HA * Math.PI / 180;
+  const latRad = lat * Math.PI / 180;
+  const alt = Math.asin(Math.sin(latRad)*Math.sin(dec) + Math.cos(latRad)*Math.cos(dec)*Math.cos(HArad));
+  const az = Math.atan2(-Math.cos(dec)*Math.sin(HArad), Math.sin(dec)*Math.cos(latRad) - Math.cos(dec)*Math.cos(HArad)*Math.sin(latRad));
+  return { azimuth: wrap360(az * 180 / Math.PI), altitude: alt * 180 / Math.PI };
+}
+function getMarsPositionFromEarth(date, lat, lon) {
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const d = JD - 2451545.0;
+  const M_mars = wrap360(19.373 + 0.5240208 * d);
+  const L_mars = wrap360(355.433 + 0.5240208 * d);
+  const Mrad = M_mars * Math.PI / 180;
+  const lambda = L_mars + 10.691 * Math.sin(Mrad) + 0.623 * Math.sin(2*Mrad);
+  const lambdaRad = lambda * Math.PI / 180;
+  const epsilon = 23.439 * Math.PI / 180;
+  const ra = Math.atan2(Math.sin(lambdaRad)*Math.cos(epsilon), Math.cos(lambdaRad));
+  const dec = Math.asin(Math.sin(epsilon)*Math.sin(lambdaRad));
+  const utcH = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600;
+  const GMST = (6.697375 + 0.0657098242 * d + utcH) % 24;
+  const LST = wrap360(GMST * 15 + lon);
+  const HA = wrap360(LST - ra * 180 / Math.PI);
+  const HArad = HA * Math.PI / 180;
+  const latRad = lat * Math.PI / 180;
+  const alt = Math.asin(Math.sin(latRad)*Math.sin(dec) + Math.cos(latRad)*Math.cos(dec)*Math.cos(HArad));
+  const az = Math.atan2(-Math.cos(dec)*Math.sin(HArad), Math.sin(dec)*Math.cos(latRad) - Math.cos(dec)*Math.cos(HArad)*Math.sin(latRad));
+  return { azimuth: wrap360(az * 180 / Math.PI), altitude: alt * 180 / Math.PI };
+}
+function getSunPositionMars(mtcHour, lat_mars) {
+  const hourAngle = (mtcHour - 12) * 15;
+  // Simplificación intencional: declinación solar marciana fija para evitar sobrecoste en cálculo en tiempo real.
+  const dec_sun_mars = 0;
+  const latRad = lat_mars * Math.PI / 180;
+  const haRad = hourAngle * Math.PI / 180;
+  const alt = Math.asin(Math.sin(latRad)*Math.sin(dec_sun_mars*Math.PI/180) + Math.cos(latRad)*Math.cos(dec_sun_mars*Math.PI/180)*Math.cos(haRad));
+  const az = Math.atan2(-Math.cos(dec_sun_mars*Math.PI/180)*Math.sin(haRad), Math.sin(dec_sun_mars*Math.PI/180)*Math.cos(latRad) - Math.cos(dec_sun_mars*Math.PI/180)*Math.cos(haRad)*Math.sin(latRad));
+  return { azimuth: wrap360(az * 180/Math.PI), altitude: alt * 180/Math.PI };
+}
+function getPhobosPosition(mtcTotalSeconds, lat_mars, lon_mars) {
+  const PHOBOS_MAX_ALTITUDE = 70;
+  const PHOBOS_LATITUDE_FACTOR = 0.8;
+  const PHOBOS_PERIOD_SOL = 0.31891;
+  const SOL_S = 88775.244;
+  const angle = wrap360(mtcTotalSeconds / (PHOBOS_PERIOD_SOL * SOL_S) * 360 + lon_mars);
+  const alt = PHOBOS_MAX_ALTITUDE - Math.abs(lat_mars) * PHOBOS_LATITUDE_FACTOR;
+  const az = wrap360(360 - angle);
+  return { azimuth: az, altitude: Math.max(-10, alt * Math.cos((angle - 180) * Math.PI/180)) };
+}
+function getDeimosPosition(mtcTotalSeconds, lat_mars, lon_mars) {
+  const DEIMOS_MAX_ALTITUDE = 60;
+  const DEIMOS_LATITUDE_FACTOR = 0.7;
+  const DEIMOS_PERIOD_SOL = 1.26244;
+  const SOL_S = 88775.244;
+  const angle = wrap360(mtcTotalSeconds / (DEIMOS_PERIOD_SOL * SOL_S) * 360 + lon_mars * 0.5);
+  const alt = DEIMOS_MAX_ALTITUDE - Math.abs(lat_mars) * DEIMOS_LATITUDE_FACTOR;
+  const az = wrap360(angle);
+  return { azimuth: az, altitude: Math.max(-5, alt * Math.cos((angle - 90) * Math.PI/180)) };
+}
+function getEarthFromMars(date, lat_mars, lon_mars) {
+  const EARTH_DECLINATION_DEGREES = -23;
+  const JD = date.getTime()/86400000 + 2440587.5;
+  const d = JD - 2451545.0;
+  const L_earth_helio = wrap360(100.464 + 0.9856474*d);
+  const L_mars_helio = wrap360(355.433 + 0.5240208*d);
+  const angle_diff = wrap360(L_earth_helio - L_mars_helio);
+  const az = wrap360(angle_diff);
+  const MSD = getMSD(date);
+  const mtcHour = getMTC(MSD) + lon_mars/15;
+  const hourAngle = (mtcHour % 24 - 12) * 15;
+  const latRad = lat_mars * Math.PI/180;
+  const decEarth = EARTH_DECLINATION_DEGREES * Math.PI/180;
+  const haRad = (hourAngle + angle_diff/4) * Math.PI/180;
+  const alt = Math.asin(Math.sin(latRad)*Math.sin(decEarth) + Math.cos(latRad)*Math.cos(decEarth)*Math.cos(haRad));
+  return { azimuth: az, altitude: alt * 180/Math.PI };
+}
+function getEarthFromMoon(lat_moon, lon_moon) {
+  if(Math.abs(lon_moon) > 90) return { altitude: -45, azimuth: 180, visible: false };
+  const alt = 90 - Math.abs(lat_moon) - Math.abs(lon_moon) * 0.3;
+  const az = lon_moon > 0 ? 270 : 90;
+  return { altitude: Math.max(5, alt), azimuth: az, visible: true };
+}
+function getSunFromMoon(date, lat_moon, lon_moon) {
+  const JD = date.getTime()/86400000 + 2440587.5;
+  const T = (JD - 2451545.0) / 36525;
+  const D = 297.85 + 445267.11*T;
+  const phaseAngle = wrap360(D);
+  const sunLon = wrap360(phaseAngle + lon_moon);
+  const isDaytime = sunLon < 180;
+  const hourAngle = sunLon - 90;
+  const latRad = lat_moon * Math.PI/180;
+  const haRad = hourAngle * Math.PI/180;
+  const alt = Math.asin(Math.cos(latRad)*Math.cos(haRad));
+  const az = Math.atan2(-Math.sin(haRad), Math.sin(latRad)*Math.cos(haRad));
+  return {
+    azimuth: wrap360(az * 180/Math.PI),
+    altitude: alt * 180/Math.PI,
+    isDaytime
+  };
+}
+function getMarsFromMoon(date, lat_moon, lon_moon) {
+  const JD = date.getTime()/86400000 + 2440587.5;
+  const d = JD - 2451545.0;
+  const L_mars = wrap360(355.433 + 0.5240208*d);
+  const az = wrap360(L_mars + lon_moon);
+  const latRad = lat_moon * Math.PI/180;
+  const alt = Math.asin(Math.sin(latRad) * Math.sin(10*Math.PI/180) + Math.cos(latRad)*Math.cos(10*Math.PI/180)*Math.cos(az*Math.PI/180));
+  return { azimuth: az, altitude: alt * 180/Math.PI };
+}
+function drawSkyBackground(ctx, W, H, horizonY, type, bodies){
+  const isLight = document.body.classList.contains('light');
+  if(type === 'moon'){
+    ctx.fillStyle = isLight ? '#0b0b0f' : '#000000';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    for(let i=0;i<24;i++){
+      const x = (i * 73) % W;
+      const y = (i * 37) % Math.max(10, horizonY - 8);
+      ctx.fillRect(x,y,1,1);
+    }
+    return;
+  }
+  const sun = bodies.find(b => b.type === 'sun' || b.type === 'sun-mars');
+  const sunAlt = sun ? sun.altitude : -30;
+  const g = ctx.createLinearGradient(0,0,0,horizonY);
+  if(type === 'earth'){
+    let top = '#050815', mid = '#0a0f2a', hz = '#1a2742';
+    if(sunAlt > 60){ top='#64b5f6'; mid='#90caf9'; hz='#bbdefb'; }
+    else if(sunAlt > 10){ top='#1a6fb5'; mid='#42a5f5'; hz='#90caf9'; }
+    else if(sunAlt > 0){ top='#ff7043'; mid='#ff9e57'; hz='#ffb74d'; }
+    else if(sunAlt > -6){ top='#1a3a6b'; mid='#3f4f7a'; hz='#ff8f55'; }
+    else if(sunAlt > -12){ top='#0f1a35'; mid='#16274f'; hz='#34496d'; }
+    g.addColorStop(0, top); g.addColorStop(0.68, mid); g.addColorStop(1, hz);
+  } else {
+    let top = '#020408', mid = '#1a202d', hz = '#303847';
+    if(sunAlt > 10){ top='#c1440e'; mid='#d75c27'; hz='#e87040'; }
+    else if(sunAlt > 0){ top='#5f6f99'; mid='#8a8bb0'; hz='#d9865a'; }
+    else if(sunAlt > -6){ top='#1f2e52'; mid='#3c4a6f'; hz='#7a6f7c'; }
+    g.addColorStop(0, top); g.addColorStop(0.7, mid); g.addColorStop(1, hz);
+  }
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,horizonY);
+}
+function drawHorizonCanvas(canvas, bodies, type) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const horizonY = Math.floor(H * 0.68);
+  const isLight = document.body.classList.contains('light');
+
+  drawSkyBackground(ctx, W, H, horizonY, type, bodies);
+
+  ctx.beginPath();
+  ctx.moveTo(0, horizonY);
+  ctx.lineTo(W, horizonY);
+  ctx.strokeStyle = type === 'moon' ? (isLight ? '#727272' : '#444') : (type === 'mars' ? (isLight ? '#9d5e33' : '#8b5a2b') : (isLight ? '#3f6e3f' : '#3a5a3a'));
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  const groundGrad = ctx.createLinearGradient(0, horizonY, 0, H);
+  if (type === 'earth') {
+    groundGrad.addColorStop(0, isLight ? '#3c5a3c' : '#1a2d1a');
+    groundGrad.addColorStop(1, isLight ? '#203620' : '#0a150a');
+  } else if (type === 'mars') {
+    groundGrad.addColorStop(0, isLight ? '#7a4420' : '#5c2a0a');
+    groundGrad.addColorStop(1, isLight ? '#4a2812' : '#2a1005');
+  } else {
+    groundGrad.addColorStop(0, isLight ? '#3a3a3a' : '#1a1a1a');
+    groundGrad.addColorStop(1, isLight ? '#1a1a1a' : '#050505');
+  }
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, horizonY, W, H - horizonY);
+
+  const cardinals = [
+    {label:'N',az:0},{label:'NE',az:45},{label:'E',az:90},{label:'SE',az:135},
+    {label:'S',az:180},{label:'SW',az:225},{label:'W',az:270},{label:'NW',az:315}
+  ];
+  ctx.font = '9px monospace';
+  ctx.fillStyle = isLight ? 'rgba(50,60,72,0.65)' : 'rgba(200,210,220,0.58)';
+  ctx.textAlign = 'center';
+  cardinals.forEach(c => {
+    const x = (c.az / 360) * W;
+    ctx.fillText(c.label, x, horizonY + 11);
+    ctx.beginPath(); ctx.moveTo(x, horizonY - 3); ctx.lineTo(x, horizonY + 3);
+    ctx.strokeStyle = isLight ? 'rgba(40,50,70,0.25)' : 'rgba(200,210,220,0.25)';
+    ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  bodies.forEach(body => {
+    if (body.altitude < -15) return;
+    const x = (wrap360(body.azimuth) / 360) * W;
+    const maxAlt = 85;
+    const y = body.altitude >= 0
+      ? horizonY - (body.altitude / maxAlt) * (horizonY - 8)
+      : horizonY + (Math.abs(body.altitude) / 20) * 12;
+    const alpha = body.altitude >= 0 ? 1 : 0.25;
+    ctx.globalAlpha = alpha;
+
+    const bodySize = body.type === 'sun' ? clamp((body.size || 12) + (body.altitude > 0 ? body.altitude / 18 : 0), 8, 18) : body.size;
+    if (body.type === 'sun' || body.type === 'sun-mars' || body.type === 'sun-moon') {
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, bodySize * 2);
+      const glowColor = body.color;
+      glow.addColorStop(0, glowColor);
+      glow.addColorStop(0.55, blendHex(glowColor, '#ffffff', 0.2));
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, bodySize * 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(x, y, (bodySize || 6) / 2, 0, Math.PI * 2);
+    ctx.fillStyle = body.color;
+    ctx.fill();
+    ctx.font = '8px monospace';
+    ctx.fillStyle = isLight ? 'rgba(30,40,58,0.95)' : 'rgba(220,230,240,0.88)';
+    ctx.textAlign = 'center';
+    ctx.fillText(body.label, x, y - (bodySize || 6) / 2 - 3);
+    ctx.globalAlpha = 1;
+  });
+}
+function updateHorizons(now) {
+  const current = now || new Date();
+  const earthCity = getEarthCityForOffset(selectedUtcOffset) || { lat: 0, lon: 0 };
+  const earthSun = getSunPosition(current, earthCity.lat, earthCity.lon);
+  const earthMoon = getMoonPosition(current, earthCity.lat, earthCity.lon);
+  const earthMars = getMarsPositionFromEarth(current, earthCity.lat, earthCity.lon);
+  const phase = getLunarPhaseFraction(current);
+  const moonIllum = Math.round((1 - Math.cos(phase * Math.PI * 2)) * 50);
+  drawHorizonCanvas(
+    document.getElementById('horizon-earth'),
+    [
+      { ...earthSun, label: 'Sol', color: '#ffd45a', size: 12, type: 'sun' },
+      { ...earthMoon, label: `Luna ${moonIllum}%`, color: '#d8d8df', size: 9, type: 'moon' },
+      { ...earthMars, label: 'Marte', color: '#ff6040', size: 5, type: 'planet' }
+    ],
+    'earth'
+  );
+  const earthInfo = document.getElementById('horizon-earth-info');
+  if(earthInfo){
+    earthInfo.textContent = `Sol: ${formatAzAlt(earthSun)} | Sale ${earthAstroDisplay.sunrise} Pone ${earthAstroDisplay.sunset} | Luna: ${formatAzAlt(earthMoon, true)} | Marte: ${formatAzAlt(earthMars)} | Luna sale ${earthAstroDisplay.moonrise} pone ${earthAstroDisplay.moonset}`;
+  }
+
+  const marsPOI = MARS_POIS[selectedMarsPoi] || { lat: 0, lon: 0 };
+  const MSD = getMSD(current);
+  const mtcH = getMTC(MSD);
+  const localMtcH = wrap24(mtcH + signedLongitude(marsPOI.lon) / 15);
+  const mtcTotalSec = MSD * 88775.244;
+  const marsSun = getSunPositionMars(localMtcH, marsPOI.lat);
+  const phobos = getPhobosPosition(mtcTotalSec, marsPOI.lat, marsPOI.lon);
+  const deimos = getDeimosPosition(mtcTotalSec, marsPOI.lat, marsPOI.lon);
+  const earthFromMars = getEarthFromMars(current, marsPOI.lat, marsPOI.lon);
+  const marsBodies = [
+    { ...marsSun, label: 'Sol', color: '#ffe4c8', size: 10, type: 'sun-mars' },
+    { ...phobos, label: 'Fobos', color: '#a0a8b8', size: 6, type: 'moon' },
+    { ...deimos, label: 'Deimos', color: '#9a9aa2', size: 4, type: 'moon' },
+    { ...earthFromMars, label: 'Tierra', color: '#4488ff', size: 5, type: 'planet' }
+  ];
+  drawHorizonCanvas(document.getElementById('horizon-mars'), marsBodies, 'mars');
+  drawHorizonCanvas(document.getElementById('horizon-darian'), marsBodies, 'mars');
+  const offset = getMarsReferenceOffset();
+  const sunriseMtc = wrap24(6 - offset);
+  const sunsetMtc = wrap24(18 - offset);
+  const marsInfoText = `Sol: sale ${formatHHMM(sunriseMtc)} pone ${formatHHMM(sunsetMtc)} | Fobos: Az ${pad(Math.round(wrap360(phobos.azimuth)),3)}° (O→E) | Deimos: Az ${pad(Math.round(wrap360(deimos.azimuth)),3)}° | Tierra: ${formatAzAlt(earthFromMars)}`;
+  const marsInfo = document.getElementById('horizon-mars-info');
+  const darianInfo = document.getElementById('horizon-darian-info');
+  if(marsInfo) marsInfo.textContent = marsInfoText;
+  if(darianInfo) darianInfo.textContent = marsInfoText;
+
+  const lunarPOI = LUNAR_POIS[selectedLunarPoi] || { lat: 8.5, lon: 31.4 };
+  const sunPosMoon = getSunFromMoon(current, lunarPOI.lat, lunarPOI.lon);
+  const earthPosMoon = getEarthFromMoon(lunarPOI.lat, lunarPOI.lon);
+  const marsPosMoon = getMarsFromMoon(current, lunarPOI.lat, lunarPOI.lon);
+  drawHorizonCanvas(
+    document.getElementById('horizon-moon'),
+    [
+      { ...sunPosMoon, label: 'Sol', color: '#ffffff', size: 12, type: 'sun-moon' },
+      { ...earthPosMoon, label: 'Tierra', color: '#4488ff', size: 18, type: 'earth-from-moon' },
+      { ...marsPosMoon, label: 'Marte', color: '#ff6040', size: 4, type: 'planet' }
+    ],
+    'moon'
+  );
+  const moonInfo = document.getElementById('horizon-moon-info');
+  if(moonInfo){
+    moonInfo.textContent = `Sol: ${sunPosMoon.isDaytime ? 'día lunar' : 'noche lunar'} | Tierra: ${earthPosMoon.visible ? `${formatAzAlt(earthPosMoon)} (siempre visible)` : 'no visible desde cara oculta'} | Marte: ${formatAzAlt(marsPosMoon)}`;
+  }
 }
 function renderMarsAstroEvents(now, panelPrefix){
   const mtcH = getMTC(getMSD(now));
@@ -2248,6 +2624,7 @@ function tick(){
   renderRovers(now);
   renderMarsPoi(now);
   renderLunarPoi(now);
+  updateHorizons(now);
   document.getElementById('lunar-season').textContent = 'Sin estaciones (eje ~1.54°)';
   document.getElementById('lunar-axis').textContent = '1.54° respecto a la eclíptica';
 
