@@ -2406,7 +2406,6 @@ function onLSTLunInput(val) {
     lstNavLive = false;
     const secFromEpoch = (n - 1) * LUNATION_SEC;
     jumpToDate(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
-    syncAllCalendarsToSim();
   }
 }
 
