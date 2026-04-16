@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calendario Tierra - Luna & Marciano</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f;--panel:#12121e;--border:rgba(255,255,255,.07);
+  --text:#e8eaf6;--sub:#9099b5;--r:18px;
+  --ea:#388bff;--ma:#ff6e32;--da:#c084fc;--la:#00c8aa;
+  --sel-e:#00e5ff;--sel-m:#ffd700;--sel-d:#f0abfc;--sel-l:#00ffe8;
+  --glow-e:rgba(56,139,255,.3);--glow-m:rgba(255,110,50,.3);--glow-d:rgba(192,132,252,.3);--glow-l:rgba(0,200,170,.3);
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:1.5rem 1rem 3rem;gap:1.2rem}
+
+/* ── Header ── */
+header{text-align:center}
+header h1{font-size:clamp(1.2rem,3.5vw,1.9rem);font-weight:700;letter-spacing:.04em}
+header p{color:var(--sub);font-size:.78rem;margin-top:.3rem}
+
+/* ── Sync bar ── */
+.sync-bar{display:flex;align-items:center;gap:1rem;justify-content:center;flex-wrap:wrap}
+.sync-btn{
+  padding:.55rem 1.4rem;border-radius:50px;border:2px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--sub);font-size:.85rem;font-weight:600;
+  cursor:pointer;letter-spacing:.06em;transition:all .25s;display:flex;align-items:center;gap:.5rem
+}
+.sync-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+.sync-btn.active{
+  border-color:var(--sel-e);color:var(--sel-e);
+  box-shadow:0 0 18px rgba(0,229,255,.25);
+  animation:pulse-border 2s ease-in-out infinite
+}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 18px rgba(0,229,255,.25)}50%{box-shadow:0 0 32px rgba(0,229,255,.5)}}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.theme-btn{
+  width:36px;height:36px;border-radius:50%;border:1px solid var(--border);
+  background:rgba(255,255,255,.06);color:var(--sub);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0
+}
+.theme-btn:hover{border-color:rgba(255,255,255,.3);color:var(--text);background:rgba(255,255,255,.12)}
+
+/* ── Mode bar ── */
+.mode-bar{display:flex;align-items:center;gap:.55rem;justify-content:center;flex-wrap:wrap}
+.mode-btn{
+  padding:.5rem 1rem;border-radius:50px;border:2px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--sub);font-size:.8rem;font-weight:700;
+  cursor:pointer;letter-spacing:.02em;transition:all .2s
+}
+.mode-btn:hover:not(:disabled){border-color:rgba(255,255,255,.2);color:var(--text)}
+.mode-btn:disabled{opacity:.9;cursor:default}
+.mode-btn.active-e{border-color:var(--ea);color:var(--ea);box-shadow:0 0 16px rgba(56,139,255,.25)}
+.mode-btn.active-d{border-color:var(--da);color:var(--da);box-shadow:0 0 16px rgba(192,132,252,.28)}
+.mode-btn.active-m{border-color:var(--ma);color:var(--ma);box-shadow:0 0 16px rgba(255,110,50,.28)}
+
+/* ── Grid ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.4rem;width:100%;max-width:1300px}
+.grid.single-panel{
+  grid-template-columns:minmax(300px,680px);
+  max-width:760px;
+  justify-content:center
+}
+
+/* ── Panel ── */
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.6rem 1.4rem 1.8rem;display:flex;flex-direction:column;align-items:center;gap:.9rem;
+  position:relative;overflow:visible;transition:border-color .3s
+}
+.panel::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+  border-radius:50%;filter:blur(80px);opacity:.4;pointer-events:none;z-index:0}
+.panel.earth::before{background:var(--glow-e)}
+.panel.mars::before{background:var(--glow-m)}
+.panel.darian::before{background:var(--glow-d)}
+.panel.lunar::before{background:var(--glow-l)}
+.panel.synced{border-color:rgba(0,229,255,.3)}
+
+/* ── Badge & top row ── */
+.panel-top{display:flex;justify-content:space-between;align-items:center;width:100%;position:relative;z-index:1}
+.badge{display:flex;align-items:center;gap:.5rem;font-size:.75rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--sub)}
+.badge .dot{width:9px;height:9px;border-radius:50%}
+.earth .dot{background:var(--ea);box-shadow:0 0 7px var(--ea)}
+.mars .dot{background:var(--ma);box-shadow:0 0 7px var(--ma)}
+.darian .dot{background:var(--da);box-shadow:0 0 7px var(--da)}
+.lunar .dot{background:var(--la);box-shadow:0 0 7px var(--la)}
+.now-btn{
+  padding:.3rem .8rem;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--sub);font-size:.72rem;cursor:pointer;transition:all .2s
+}
+.now-btn:hover{color:var(--text);border-color:rgba(255,255,255,.25)}
+.now-btn.away{color:var(--sel-e);border-color:var(--sel-e);animation:blink .9s step-end infinite}
+.mars .now-btn.away{color:var(--sel-m);border-color:var(--sel-m)}
+.darian .now-btn.away{color:var(--da);border-color:var(--da)}
+.lunar .now-btn.away{color:var(--la);border-color:var(--la)}
+@keyframes blink{50%{opacity:.4}}
+
+/* ── Clock ── */
+.clock-wrap{position:relative;width:190px;display:flex;flex-direction:column;align-items:center;z-index:1}
+canvas.clock-face{display:block;max-width:100%}
+.clock-digital{
+  position:static;margin-top:6px;
+  font-size:1rem;font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:.05em;white-space:nowrap
+}
+.earth .clock-digital{color:#7bb8ff}
+.mars .clock-digital{color:#ffaa70}
+.darian .clock-digital{color:#c084fc}
+.lunar .clock-digital{color:var(--la)}
+.tz-bar{display:flex;align-items:center;gap:.5rem;width:100%;z-index:1}
+.tz-label{font-size:.72rem;color:var(--sub);white-space:nowrap;flex-shrink:0}
+.tz-select{flex:1;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.3rem .5rem;font-size:.78rem;cursor:pointer;outline:none;transition:border-color .2s}
+.tz-select:focus{border-color:var(--ea)}
+body.light .tz-select{background:#f0f2ff}
+
+/* ── Mars seconds reference ── */
+.mars-sec-ref{
+  width:100%;padding:.5rem .6rem;border-radius:10px;
+  background:rgba(255,110,50,.06);border:1px solid rgba(255,110,50,.12);
+  font-size:.68rem;color:var(--sub);z-index:1
+}
+.darian .mars-sec-ref{background:rgba(192,132,252,.06);border-color:rgba(192,132,252,.12)}
+.sec-ref-label{text-align:center;margin-bottom:.35rem;letter-spacing:.03em}
+.sec-ref-label strong{color:var(--ma)}
+.darian .sec-ref-label strong{color:var(--da)}
+.sec-ref-track-wrap{display:flex;align-items:center;gap:.4rem}
+.sec-ref-sym{font-size:.75rem;flex-shrink:0}
+.sec-ref-track{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.sec-ref-earth-fill{
+  position:absolute;left:0;top:0;height:100%;width:97.33%;
+  border-radius:4px 0 0 4px;
+  background:linear-gradient(90deg,var(--ea),#5ca8ff)
+}
+.sec-ref-mars-fill{
+  position:absolute;left:97.33%;top:0;height:100%;width:2.67%;
+  border-radius:0 4px 4px 0;
+  background:linear-gradient(90deg,#ff9050,var(--ma));
+  animation:mars-extra-pulse 1.027s ease-in-out infinite
+}
+.darian .sec-ref-mars-fill{background:linear-gradient(90deg,#d8a0fc,var(--da))}
+@keyframes mars-extra-pulse{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* ── Date block ── */
+.date-block{text-align:center;width:100%;z-index:1}
+.day-num{font-size:3rem;font-weight:800;line-height:1}
+.earth .day-num{color:var(--ea)}
+.mars .day-num{color:var(--ma)}
+.darian .day-num{color:var(--da)}
+.month-year{font-size:.95rem;color:var(--sub);margin-top:.25rem}
+.weekday{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);margin-top:.12rem}
+
+/* ── Nav controls ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;width:100%;gap:.3rem;z-index:1;position:relative}
+.cal-nav-center{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0}
+.cal-nav-title{
+  font-size:.82rem;font-weight:700;letter-spacing:.05em;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;
+  cursor:pointer;padding:.2rem .4rem;border-radius:8px;transition:background .15s;user-select:none
+}
+.cal-nav-title:hover{background:rgba(255,255,255,.08)}
+.earth .cal-nav-title:hover{background:rgba(56,139,255,.12)}
+.mars .cal-nav-title:hover{background:rgba(255,110,50,.12)}
+.darian .cal-nav-title:hover{background:rgba(192,132,252,.12)}
+.lunar .cal-nav-title:hover{background:rgba(0,200,170,.12)}
+.cal-nav-sub{font-size:.67rem;color:var(--sub);letter-spacing:.05em}
+.nav-group{display:flex;gap:.2rem}
+.nbtn{
+  width:28px;height:28px;border-radius:8px;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--sub);font-size:.8rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;
+  padding:0;font-weight:700
+}
+.nbtn:hover:not(:disabled){background:rgba(255,255,255,.1);color:var(--text)}
+.nbtn:disabled{opacity:.25;cursor:default}
+
+/* ── Mini-cal ── */
+.mini-cal{width:100%;z-index:1}
+.mini-cal table{width:100%;border-collapse:collapse;font-size:.75rem}
+.mini-cal th{color:var(--sub);font-weight:600;padding:.22rem 0;text-align:center;font-size:.7rem}
+.mini-cal td{text-align:center;padding:.28rem .06rem;border-radius:6px;cursor:pointer;transition:background .12s;user-select:none}
+.mini-cal td:hover:not(.empty){background:rgba(255,255,255,.08)}
+.mini-cal td.empty{cursor:default}
+.mini-cal td.today{font-weight:700;color:#fff;border-radius:6px}
+.earth .mini-cal td.today{background:var(--ea)}
+.mars .mini-cal td.today{background:var(--ma)}
+.darian .mini-cal td.today{background:var(--da)}
+.lunar .mini-cal td.today{background:var(--la)}
+.mini-cal td.selected{border-radius:6px;font-weight:700;color:#000}
+.earth .mini-cal td.selected{background:var(--sel-e)}
+.mars .mini-cal td.selected{background:var(--sel-m)}
+.darian .mini-cal td.selected{background:var(--sel-d)}
+.lunar .mini-cal td.selected{background:var(--sel-l)}
+.earth .mini-cal td.today.selected{background:linear-gradient(135deg,var(--ea),var(--sel-e));color:#fff}
+.mars .mini-cal td.today.selected{background:linear-gradient(135deg,var(--ma),var(--sel-m));color:#fff}
+.darian .mini-cal td.today.selected{background:linear-gradient(135deg,var(--da),var(--sel-d));color:#fff}
+.lunar .mini-cal td.today.selected{background:linear-gradient(135deg,var(--la),var(--sel-l));color:#fff}
+
+/* ── Selected info ── */
+.sel-info{
+  width:100%;min-height:1.6rem;text-align:center;font-size:.73rem;
+  color:var(--sel-e);background:rgba(0,229,255,.07);border-radius:8px;
+  padding:.35rem .5rem;display:none;border:1px solid rgba(0,229,255,.15);z-index:1
+}
+.mars .sel-info{color:var(--sel-m);background:rgba(255,215,0,.07);border-color:rgba(255,215,0,.15)}
+.darian .sel-info{color:var(--sel-d);background:rgba(240,171,252,.07);border-color:rgba(240,171,252,.15)}
+.lunar .sel-info{color:var(--sel-l);background:rgba(0,255,232,.08);border-color:rgba(0,255,232,.2)}
+.sel-info.visible{display:block}
+
+/* ── Info row ── */
+.info-row{
+  display:flex;justify-content:space-between;width:100%;font-size:.72rem;
+  color:var(--sub);border-top:1px solid var(--border);padding-top:.6rem;gap:.3rem;flex-wrap:wrap;z-index:1
+}
+.info-row span{white-space:nowrap}
+.info-row strong{color:var(--text)}
+.lst-sec-ref{
+  width:100%;padding:.5rem .6rem;border-radius:10px;
+  background:rgba(0,200,170,.06);border:1px solid rgba(0,200,170,.12);
+  font-size:.68rem;color:var(--sub);z-index:1
+}
+.lunar .sec-ref-label strong{color:var(--la)}
+.lst-ref-earth-fill{
+  position:absolute;left:0;top:0;height:100%;width:28.22%;
+  border-radius:4px 0 0 4px;
+  background:linear-gradient(90deg,var(--ea),#5ca8ff)
+}
+.lst-ref-lunar-fill{
+  position:absolute;left:28.22%;top:0;height:100%;width:71.78%;
+  border-radius:0 4px 4px 0;
+  background:linear-gradient(90deg,#00ddbb,var(--la));
+  animation:lst-pulse 3.544s ease-in-out infinite
+}
+@keyframes lst-pulse{0%,100%{opacity:.45}50%{opacity:1}}
+.lst-time-display{width:100%;background:rgba(0,200,170,.06);border:1px solid rgba(0,200,170,.15);border-radius:10px;padding:.6rem;z-index:1}
+.lst-row{display:flex;align-items:baseline;gap:.25rem;justify-content:center;flex-wrap:wrap}
+.lst-val{font-size:1.5rem;font-weight:800;color:var(--la);font-variant-numeric:tabular-nums;min-width:2ch;text-align:center}
+.lst-unit{font-size:.6rem;color:var(--sub);letter-spacing:.05em;text-transform:uppercase;margin-right:.4rem}
+.lst-sep{font-size:1.5rem;font-weight:800;color:var(--sub);margin:0 .1rem}
+.lst-ref{width:100%;font-size:.68rem;color:var(--sub);z-index:1;border-top:1px solid var(--border);padding-top:.5rem}
+.lst-ref-row{display:flex;justify-content:space-between;padding:.1rem 0}
+.lst-ref-row strong{color:var(--text)}
+.badge-sub{font-size:.65rem;color:var(--sub);letter-spacing:.03em}
+
+/* ═══════════════════════════════════════
+   DATE PICKER POPOVER
+═══════════════════════════════════════ */
+.dp-popover{
+  position:fixed;z-index:9999;
+  background:#1c1c2e;border:1px solid rgba(255,255,255,.15);
+  border-radius:14px;padding:.8rem;
+  box-shadow:0 8px 32px rgba(0,0,0,.7);
+  min-width:224px;
+  opacity:0;transform:scale(.94) translateY(-6px);
+  transition:opacity .15s ease,transform .15s ease;
+  pointer-events:none
+}
+.dp-popover.dp-open{opacity:1;transform:scale(1) translateY(0);pointer-events:all}
+.dp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;gap:.3rem}
+.dp-ybtn{
+  width:26px;height:26px;border-radius:7px;border:1px solid var(--border);
+  background:rgba(255,255,255,.06);color:var(--sub);font-size:.72rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;font-weight:700;flex-shrink:0
+}
+.dp-ybtn:hover:not(:disabled){background:rgba(255,255,255,.13);color:var(--text)}
+.dp-ybtn:disabled{opacity:.25;cursor:default}
+.dp-year-lbl{
+  flex:1;text-align:center;font-size:.85rem;font-weight:700;cursor:pointer;
+  padding:.2rem .3rem;border-radius:7px;transition:background .15s;color:var(--text)
+}
+.dp-year-lbl:hover{background:rgba(255,255,255,.1)}
+.dp-decade-lbl{flex:1;text-align:center;font-size:.78rem;font-weight:600;color:var(--sub)}
+.dp-grid{display:grid;gap:.28rem}
+.dp-grid-12{grid-template-columns:repeat(4,1fr)}
+.dp-grid-24{grid-template-columns:repeat(4,1fr)}
+.dp-grid-yr{grid-template-columns:repeat(4,1fr)}
+.dp-cell{
+  padding:.32rem .1rem;border-radius:7px;text-align:center;font-size:.7rem;
+  cursor:pointer;transition:background .12s;color:var(--sub);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.dp-cell:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.dp-cell.dp-cur{font-weight:700}
+.dp-cell.dp-cur.dp-e{background:rgba(56,139,255,.22);color:var(--ea)}
+.dp-cell.dp-cur.dp-m{background:rgba(255,110,50,.22);color:var(--ma)}
+.dp-cell.dp-cur.dp-d{background:rgba(192,132,252,.22);color:var(--da)}
+
+footer{font-size:.68rem;color:var(--sub);text-align:center;opacity:.55;max-width:900px;line-height:1.6}
+
+body.light{
+  --bg:#f0f2ff; --panel:#ffffff; --border:rgba(0,0,0,.1);
+  --text:#1a1a2e; --sub:#5a6080;
+}
+body.light .panel{box-shadow:0 2px 16px rgba(0,0,0,0.08)}
+body.light .dp-popover{
+  background:#ffffff;color:var(--text);
+  border-color:rgba(0,0,0,.15);box-shadow:0 8px 24px rgba(0,0,0,.16)
+}
+body.light .nbtn,
+body.light .sync-btn,
+body.light .now-btn,
+body.light .mode-btn,
+body.light .dp-ybtn{
+  border-color:rgba(0,0,0,.16);background:rgba(30,30,50,.03)
+}
+body.light .theme-btn{background:rgba(0,0,0,.04);color:var(--sub)}
+body.light .theme-btn:hover{background:rgba(0,0,0,.1)}
+body.light .mini-cal td:hover:not(.empty){background:rgba(0,0,0,.06)}
+body.light .cal-nav-title:hover{background:rgba(0,0,0,.06)}
+body.light .dp-year-lbl:hover,
+body.light .dp-cell:hover{background:rgba(0,0,0,.08)}
+body.light canvas.clock-face{background:transparent;}
+
+/* ═══════════════════════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 640px){
+  body{ padding:.75rem .5rem 2rem; gap:.8rem; }
+
+  header h1{ font-size:1.1rem; }
+  header p{ font-size:.7rem; }
+
+  .sync-bar{ gap:.5rem; flex-wrap:wrap; justify-content:center; }
+  .sync-btn{ padding:.4rem .9rem; font-size:.78rem; }
+  .mode-bar{ gap:.35rem; flex-wrap:wrap; justify-content:center; }
+  .mode-btn{ padding:.4rem .8rem; font-size:.75rem; }
+  .theme-btn{ width:32px; height:32px; }
+
+  .grid{
+    grid-template-columns: 1fr !important;
+    gap:1rem;
+    width:100%;
+  }
+
+  .panel{
+    padding:1.1rem .9rem 1.3rem;
+    gap:.7rem;
+    width:100%;
+    max-width:100%;
+  }
+
+  .clock-wrap{ width:160px; height:160px; }
+  canvas.clock-face{ width:160px !important; height:160px !important; }
+
+  .day-num{ font-size:2.3rem; }
+  .month-year{ font-size:.85rem; }
+
+  .cal-nav-title{ font-size:.78rem; }
+  .nbtn{ width:26px; height:26px; font-size:.75rem; }
+
+  .mini-cal table{ font-size:.7rem; }
+  .mini-cal td{ padding:.22rem .04rem; }
+  .mini-cal th{ font-size:.65rem; }
+
+  .info-row{ font-size:.68rem; }
+
+  .mars-sec-ref, .lst-sec-ref{ font-size:.64rem; }
+
+  .dp-popover{ min-width:190px; padding:.6rem; }
+  .dp-cell{ font-size:.66rem; padding:.28rem .06rem; }
+
+  footer{ font-size:.62rem; padding:0 .5rem; }
+}
+
+@media (max-width: 400px){
+  .clock-wrap{ width:145px; height:145px; }
+  canvas.clock-face{ width:145px !important; height:145px !important; }
+  .day-num{ font-size:2rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Calendario Tierra - Luna &amp; Marciano</h1>
+  <p>MTC · Calendarios Exodus (Silin) y Dariano · 1 sol♂ = 1.02749125 días♁ · MY 1 = 11 abr 1955</p>
+</header>
+
+<div class="sync-bar">
+  <button class="sync-btn" id="sync-toggle" onclick="toggleSync()">
+    <span class="sync-dot"></span><span id="sync-label">Sincronizar calendarios</span>
+  </button>
+  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Modo claro" aria-label="Modo claro">
+    <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+<div class="mode-bar">
+  <button class="mode-btn mode-earth active-e" id="btn-mode-earth" onclick="setMarsMode('none')">Terrestre</button>
+  <button class="mode-btn mode-darian" id="btn-mode-darian" onclick="setMarsMode('darian')">Dariano</button>
+  <button class="mode-btn mode-silin" id="btn-mode-silin" onclick="setMarsMode('silin')">Silin</button>
+</div>
+
+<div class="grid">
+
+  <!-- ═══════ TIERRA ═══════ -->
+  <div class="panel earth" id="panel-earth">
+    <div class="panel-top">
+      <div class="badge"><span class="dot"></span>Tierra — UTC</div>
+      <button class="now-btn" id="earth-now-btn" onclick="goEarthNow()">Hoy</button>
+    </div>
+    <div class="tz-bar">
+      <span class="tz-label">Zona:</span>
+      <select id="tz-select" class="tz-select" onchange="onTzChange()"></select>
+    </div>
+    <div class="clock-wrap">
+      <canvas class="clock-face" id="canvas-earth" width="190" height="190"></canvas>
+      <div class="clock-digital" id="digital-earth">00:00:00</div>
+    </div>
+    <div class="date-block">
+      <div class="day-num" id="earth-day">1</div>
+      <div class="month-year" id="earth-month-year">Enero 2026</div>
+      <div class="weekday" id="earth-weekday">Lunes</div>
+    </div>
+    <div class="cal-nav">
+      <div class="nav-group">
+        <button class="nbtn" id="e-yy-prev" onclick="earthNav('yy',-1)" title="Año anterior">«</button>
+        <button class="nbtn" id="e-mm-prev" onclick="earthNav('mm',-1)" title="Mes anterior">‹</button>
+      </div>
+      <div class="cal-nav-center">
+        <div class="cal-nav-title" id="earth-cal-title" onclick="openDP('earth')" title="Selector rápido de fecha">Enero 2026</div>
+        <div class="cal-nav-sub" id="earth-cal-sub"></div>
+      </div>
+      <div class="nav-group">
+        <button class="nbtn" id="e-mm-next" onclick="earthNav('mm',1)" title="Mes siguiente">›</button>
+        <button class="nbtn" id="e-yy-next" onclick="earthNav('yy',1)" title="Año siguiente">»</button>
+      </div>
+    </div>
+    <div class="mini-cal"><table id="cal-earth-table"></table></div>
+    <div class="sel-info" id="earth-sel-info"></div>
+    <div class="info-row">
+      <span>JDN: <strong id="earth-jdn">—</strong></span>
+      <span>Día del año: <strong id="earth-doy">—</strong></span>
+      <span>Sem ISO: <strong id="earth-week">—</strong></span>
+    </div>
+  </div>
+
+  <!-- ═══════ LUNA — LST ═══════ -->
+  <div class="panel lunar" id="panel-lunar">
+    <div class="panel-top">
+      <div class="badge"><span class="dot"></span>Luna — LST</div>
+      <button class="now-btn" id="lst-now-btn" onclick="goLSTNow()">Ahora</button>
+    </div>
+    <div class="clock-wrap">
+      <canvas class="clock-face" id="canvas-lst" width="190" height="190"></canvas>
+      <div class="clock-digital" id="digital-lst">00:00.0</div>
+    </div>
+    <div class="lst-sec-ref">
+      <div class="sec-ref-label">1 Millilunour = <strong id="lst-ml-val">3.54367</strong> s♁ · <span id="lst-pct">+254.37%</span> más lento</div>
+      <div class="sec-ref-track-wrap">
+        <span class="sec-ref-sym">s♁</span>
+        <div class="sec-ref-track">
+          <div class="lst-ref-earth-fill"></div>
+          <div class="lst-ref-lunar-fill"></div>
+        </div>
+        <span class="sec-ref-sym">☽</span>
+      </div>
+    </div>
+    <div class="date-block">
+      <div class="day-num" id="lst-lune-live" style="color:var(--la)">1</div>
+      <div class="month-year">Lunación <strong id="lst-lunation">1</strong></div>
+      <div class="weekday">Lúnio (día lunar)</div>
+    </div>
+    <div style="display:none">
+      <span id="lst-lunour">00</span>
+      <span id="lst-centilunour">00</span>
+      <span id="lst-millilunour">0</span>
+    </div>
+    <div class="cal-nav">
+      <div class="nav-group">
+        <button class="nbtn" id="lst-lun-prev" onclick="lstNav('lun',-1)" title="Lunación anterior">«</button>
+        <button class="nbtn" id="lst-lune-prev" onclick="lstNav('lune',-1)" title="Lúnio anterior">‹</button>
+      </div>
+      <div class="cal-nav-center">
+        <div class="cal-nav-title" id="lst-cal-title">Lunación 1</div>
+        <div class="cal-nav-sub" id="lst-cal-sub"></div>
+      </div>
+      <div class="nav-group">
+        <button class="nbtn" id="lst-lune-next" onclick="lstNav('lune',1)" title="Lúnio siguiente">›</button>
+        <button class="nbtn" id="lst-lun-next" onclick="lstNav('lun',1)" title="Lunación siguiente">»</button>
+      </div>
+    </div>
+    <div class="mini-cal"><table id="cal-lst-table"></table></div>
+    <div class="sel-info" id="lst-sel-info"></div>
+    <div class="info-row">
+      <span>Lunación: <strong id="lst-lunation-info">—</strong></span>
+      <span>Lúnio: <strong id="lst-lune-info">—</strong></span>
+      <span>Hora: <strong id="lst-time">—</strong></span>
+    </div>
+  </div>
+
+  <!-- ═══════ MARTE — SILIN ═══════ -->
+  <div class="panel mars" id="panel-mars" style="display:none">
+    <div class="panel-top">
+      <div class="badge"><span class="dot"></span>Marte — Silin</div>
+      <button class="now-btn" id="mars-now-btn" onclick="goMarsNow()">Ahora</button>
+    </div>
+    <div class="clock-wrap">
+      <canvas class="clock-face" id="canvas-mars" width="190" height="190"></canvas>
+      <div class="clock-digital" id="digital-mars">00:00:00</div>
+    </div>
+    <div class="mars-sec-ref">
+      <div class="sec-ref-label">1 s<strong>♁</strong> = 1.02749125 s♂ · +2.749% más lento</div>
+      <div class="sec-ref-track-wrap">
+        <span class="sec-ref-sym">♁</span>
+        <div class="sec-ref-track">
+          <div class="sec-ref-earth-fill"></div>
+          <div class="sec-ref-mars-fill"></div>
+        </div>
+        <span class="sec-ref-sym">♂</span>
+      </div>
+    </div>
+    <div class="date-block">
+      <div class="day-num" id="mars-day">1</div>
+      <div class="month-year" id="mars-month-year">Éxodero MY 1</div>
+      <div class="weekday" id="mars-weekday">Lúnares</div>
+    </div>
+    <div class="cal-nav">
+      <div class="nav-group">
+        <button class="nbtn" id="m-yy-prev" onclick="marsNav('yy',-1)" title="MY anterior">«</button>
+        <button class="nbtn" id="m-mm-prev" onclick="marsNav('mm',-1)" title="Mes anterior">‹</button>
+      </div>
+      <div class="cal-nav-center">
+        <div class="cal-nav-title" id="mars-cal-title" onclick="openDP('mars')" title="Selector rápido de fecha">Éxodero · MY 1</div>
+        <div class="cal-nav-sub" id="mars-cal-sub"></div>
+      </div>
+      <div class="nav-group">
+        <button class="nbtn" id="m-mm-next" onclick="marsNav('mm',1)" title="Mes siguiente">›</button>
+        <button class="nbtn" id="m-yy-next" onclick="marsNav('yy',1)" title="MY siguiente">»</button>
+      </div>
+    </div>
+    <div class="mini-cal"><table id="cal-mars-table"></table></div>
+    <div class="sel-info" id="mars-sel-info"></div>
+    <div class="info-row">
+      <span>MSD: <strong id="mars-msd">—</strong></span>
+      <span>Sol año: <strong id="mars-soy">—</strong></span>
+      <span>MY: <strong id="mars-my">—</strong></span>
+    </div>
+  </div>
+
+  <!-- ═══════ MARTE — DARIANO ═══════ -->
+  <div class="panel darian" id="panel-darian" style="display:none">
+    <div class="panel-top">
+      <div class="badge"><span class="dot"></span>Marte — Dariano</div>
+      <button class="now-btn" id="darian-now-btn" onclick="goDarianNow()">Ahora</button>
+    </div>
+    <div class="clock-wrap">
+      <canvas class="clock-face" id="canvas-darian" width="190" height="190"></canvas>
+      <div class="clock-digital" id="digital-darian">00:00:00</div>
+    </div>
+    <div class="mars-sec-ref">
+      <div class="sec-ref-label">1 s<strong>♁</strong> = 1.02749125 s♂ · +2.749% más lento</div>
+      <div class="sec-ref-track-wrap">
+        <span class="sec-ref-sym">♁</span>
+        <div class="sec-ref-track">
+          <div class="sec-ref-earth-fill"></div>
+          <div class="sec-ref-mars-fill"></div>
+        </div>
+        <span class="sec-ref-sym">♂</span>
+      </div>
+    </div>
+    <div class="date-block">
+      <div class="day-num" id="darian-day">1</div>
+      <div class="month-year" id="darian-month-year">Sagittarius 1</div>
+      <div class="weekday" id="darian-weekday">Sol Lunae</div>
+    </div>
+    <div class="cal-nav">
+      <div class="nav-group">
+        <button class="nbtn" id="d-yy-prev" onclick="darianNav('yy',-1)" title="Año anterior">«</button>
+        <button class="nbtn" id="d-mm-prev" onclick="darianNav('mm',-1)" title="Mes anterior">‹</button>
+      </div>
+      <div class="cal-nav-center">
+        <div class="cal-nav-title" id="darian-cal-title" onclick="openDP('darian')" title="Selector rápido de fecha">Sagittarius · 1</div>
+        <div class="cal-nav-sub" id="darian-cal-sub"></div>
+      </div>
+      <div class="nav-group">
+        <button class="nbtn" id="d-mm-next" onclick="darianNav('mm',1)" title="Mes siguiente">›</button>
+        <button class="nbtn" id="d-yy-next" onclick="darianNav('yy',1)" title="Año siguiente">»</button>
+      </div>
+    </div>
+    <div class="mini-cal"><table id="cal-darian-table"></table></div>
+    <div class="sel-info" id="darian-sel-info"></div>
+    <div class="info-row">
+      <span>MSD: <strong id="darian-msd">—</strong></span>
+      <span>Sol año: <strong id="darian-soy">—</strong></span>
+      <span>Año D: <strong id="darian-yr">—</strong></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════ DATE PICKER POPOVER (shared) ═══════ -->
+<div id="dp-popover" class="dp-popover" style="display:none">
+  <!-- Level 1: month grid -->
+  <div id="dp-lvl1">
+    <div class="dp-header">
+      <button class="dp-ybtn" id="dp-yr-prev" onclick="dpYearStep(-1)">&#9664;</button>
+      <span class="dp-year-lbl" id="dp-year-lbl" onclick="dpGoLevel2()">2026</span>
+      <button class="dp-ybtn" id="dp-yr-next" onclick="dpYearStep(1)">&#9654;</button>
+    </div>
+    <div id="dp-months-grid" class="dp-grid"></div>
+  </div>
+  <!-- Level 2: year grid -->
+  <div id="dp-lvl2" style="display:none">
+    <div class="dp-header">
+      <button class="dp-ybtn" id="dp-dec-prev" onclick="dpDecStep(-1)">&#9664;&#9664;</button>
+      <span class="dp-decade-lbl" id="dp-decade-lbl">2020–2031</span>
+      <button class="dp-ybtn" id="dp-dec-next" onclick="dpDecStep(1)">&#9654;&#9654;</button>
+    </div>
+    <div id="dp-years-grid" class="dp-grid dp-grid-yr"></div>
+  </div>
+</div>
+
+<footer>
+  Calendario Exodus (Silin) · Meses 1–11 = 56 soles (8 semanas exactas) · Etiembre = 52–54 soles ·
+  Días Silin: Lúnares Mártes Hérmoles Zeúves Afrónes Króbado Helingo ·
+  Calendario Dariano (Gangale) · 24 meses (28/27 soles) · Bisiesto: 669 soles · Común: 668 soles ·
+  Días Dariano: Sol Solis Sol Lunae Sol Martis Sol Mercurii Sol Jovis Sol Veneris Sol Saturni
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════
+   CONSTANTES
+══════════════════════════════════════════════ */
+const MARS_SOL_RATIO = 1.02749125;
+const MSD_EPOCH_JD   = 2405522.0028779;
+const MSD_DIVISOR    = 1.0274912517;
+const SILIN_EPOCH_MS = Date.UTC(1955, 3, 11, 0, 0, 0);
+const LST_EPOCH_MS    = Date.UTC(1923, 0, 17, 2, 41, 0);
+const LUNATION_SEC    = 2551442.8;
+const LUNE_SEC        = 85048.0933;
+const LUNOUR_SEC      = 3543.6705;
+const CENTILUNOUR_SEC = 35.4367;
+const MILLILUNOUR_SEC = 3.54367;
+const MARS_YEAR_SOLS = 686.9713 / MARS_SOL_RATIO;
+const MAX_EARTH_YEAR = 3000;
+const MAX_MARS_YEAR  = 556;
+const MAX_DAR_YEAR   = 556;
+const MAX_LST_LUNATION = 13316;
+const LUNES_PER_LUNATION = 30;
+
+const MARS_DAYS_FULL  = ['Lúnares','Mártes','Hérmoles','Zeúves','Afrónes','Króbado','Helingo'];
+const MARS_DAYS_SHORT = ['Lún','Már','Hér','Zeú','Afr','Kró','Hel'];
+const MARS_MONTHS     = ['Éxodero','Fobrero','Deimzo','Olimpril','Vallayo','Hellasio',
+                          'Elísio','Argosto','Amazombre','Arcadubre','Aurorembre','Etiembre'];
+const EARTH_MONTHS    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                          'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const EARTH_MONTHS_S  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const EARTH_DAYS_FULL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const EARTH_DAYS_CAL  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+const DAR_MONTHS = [
+  'Sagittarius','Dhanus','Capricornus','Makara','Aquarius','Kumbha',
+  'Pisces','Mina','Aries','Mesha','Taurus','Vrishabha',
+  'Gemini','Mithuna','Cancer','Karka','Leo','Simha',
+  'Virgo','Kanya','Libra','Tula','Scorpius','Vrishika'
+];
+const DAR_MONTHS_S = [
+  'Sag','Dha','Cap','Mak','Aqu','Kum',
+  'Pis','Min','Ari','Mes','Tau','Vrb',
+  'Gem','Mit','Can','Kar','Leo','Sim',
+  'Vir','Kan','Lib','Tul','Sco','Vrk'
+];
+const DAR_DAYS_FULL  = ['Sol Solis','Sol Lunae','Sol Martis','Sol Mercurii','Sol Jovis','Sol Veneris','Sol Saturni'];
+const DAR_DAYS_SHORT = ['Sol','Lun','Mar','Mer','Jov','Ven','Sat'];
+
+/* ══════════════════════════════════════════════
+   ESTADO
+══════════════════════════════════════════════ */
+let syncMode = false;
+let eNavYear, eNavMonth, eSelDay = null, eNavLive = true;
+let mNavYear, mNavMonth, mSelSol = null, mNavLive = true;
+let dNavYear, dNavMonth, dSelSol = null, dNavLive = true;
+let lstNavLunation, lstNavLune, lstSelLune = null, lstNavLive = true;
+let marsMode = 'none';
+let darkMode = true;
+let selectedUtcOffset = -5;
+
+/* ══════════════════════════════════════════════
+   UTILIDADES GENERALES
+══════════════════════════════════════════════ */
+function pad(n, w=2){ return String(n).padStart(w,'0'); }
+
+function dateToJD(d){ return d.getTime()/86400000 + 2440587.5; }
+
+function getMSD(date){
+  const jdTT = dateToJD(date) + 69.184/86400;
+  return (jdTT - MSD_EPOCH_JD) / MSD_DIVISOR;
+}
+
+function getMTC(msd){ return (msd - Math.floor(msd)) * 24; }
+
+function mtcToHMS(mtcH){
+  const tot = Math.floor(mtcH * 3600);
+  return { h: Math.floor(tot/3600), m: Math.floor((tot%3600)/60), s: tot%60 };
+}
+
+function solsFromEpoch(date){
+  return (date.getTime() - SILIN_EPOCH_MS) / 86400000 / MARS_SOL_RATIO;
+}
+
+function dateFromSols(totalSols){
+  return new Date(SILIN_EPOCH_MS + totalSols * MARS_SOL_RATIO * 86400000);
+}
+
+/* ══════════════════════════════════════════════
+   SILIN CALENDAR MATH
+══════════════════════════════════════════════ */
+function etimberLen(y){
+  return Math.round(MARS_YEAR_SOLS * y) - Math.round(MARS_YEAR_SOLS * (y-1)) - 616;
+}
+function solsAtYearStart(y){ return Math.round(MARS_YEAR_SOLS * (y-1)); }
+function marsMonthLen(y, m){ return (m <= 11) ? 56 : etimberLen(y); }
+function solsAtMonthStart(y, m){
+  let s = solsAtYearStart(y);
+  for(let i = 1; i < m; i++) s += marsMonthLen(y, i);
+  return s;
+}
+
+function silinFromTotalSols(tsf){
+  const ts = Math.floor(tsf), frac = tsf - ts;
+  let yr = Math.max(1, Math.floor(ts / MARS_YEAR_SOLS) + 1);
+  while(yr > 1 && solsAtYearStart(yr) > ts) yr--;
+  while(solsAtYearStart(yr+1) <= ts) yr++;
+  const solInYear = ts - solsAtYearStart(yr);
+  let month = 1, rem = solInYear;
+  for(let m = 1; m <= 12; m++){
+    const ml = marsMonthLen(yr, m);
+    if(rem < ml){ month = m; break; }
+    rem -= ml;
+  }
+  return { year: yr, month, sol: rem+1, weekday: solInYear%7, solOfYear: solInYear+1, fracSol: frac };
+}
+
+function totalSolsForSilin(y, m, s){ return solsAtMonthStart(y, m) + (s-1); }
+
+/* ══════════════════════════════════════════════
+   DARIAN CALENDAR MATH
+   Leap rule: (year-1)%10 in {0,1,3,4,6,7,9} → 669 sols, else 668
+   Month lengths: months 6,12,18 → 27; month 24 → 28 (leap) or 27 (common); others → 28
+   This yields: leap=669 sols, common=668 sols per year
+   Average: 668.7 sols/year (close to actual ~668.59)
+   Epoch: April 11 1955 (Mon) = Sol Lunae (weekday index 1)
+══════════════════════════════════════════════ */
+const DAR_LEAP_SET = new Set([0,1,3,4,6,7,9]);
+function isDarLeap(y){ return DAR_LEAP_SET.has((y-1) % 10); }
+
+function darMonthLen(y, m){
+  if(m === 24) return isDarLeap(y) ? 28 : 27;
+  if(m % 6 === 0) return 27;   // months 6, 12, 18
+  return 28;
+}
+
+// Precomputed cumulative sols within each 10-year cycle (before year at position i=0..9)
+// Years: L,L,C,L,L,C,L,L,C,L  (L=669, C=668)
+const DA_CYCLE = 6687;
+const DA_CUM   = [0, 669, 1338, 2006, 2675, 3344, 4012, 4681, 5350, 6018];
+
+function darSolsAtYearStart(y){
+  if(y <= 1) return 0;
+  const dec = Math.floor((y-1) / 10);
+  const pos = (y-1) % 10;
+  return dec * DA_CYCLE + DA_CUM[pos];
+}
+
+function darSolsAtMonthStart(y, m){
+  let s = darSolsAtYearStart(y);
+  for(let i = 1; i < m; i++) s += darMonthLen(y, i);
+  return s;
+}
+
+function darFromTotalSols(tsf){
+  const ts = Math.floor(tsf), frac = tsf - ts;
+  let yr = Math.max(1, Math.floor(ts / 668.7) + 1);
+  while(yr > 1 && darSolsAtYearStart(yr) > ts) yr--;
+  while(darSolsAtYearStart(yr+1) <= ts) yr++;
+  const solInYear = ts - darSolsAtYearStart(yr);
+  let month = 1, rem = solInYear;
+  for(let m = 1; m <= 24; m++){
+    const ml = darMonthLen(yr, m);
+    if(rem < ml){ month = m; break; }
+    rem -= ml;
+  }
+  // Epoch sol 0 = April 11 1955 = Monday = Sol Lunae (index 1)
+  const weekday = (ts + 1) % 7;
+  return { year: yr, month, sol: rem+1, weekday, solOfYear: solInYear+1, fracSol: frac };
+}
+
+function totalSolsForDar(y, m, s){ return darSolsAtMonthStart(y, m) + (s-1); }
+
+/* ══════════════════════════════════════════════
+   CROSS-CONVERSION
+══════════════════════════════════════════════ */
+function earthToSilin(y,m,d){ return silinFromTotalSols(solsFromEpoch(new Date(Date.UTC(y,m-1,d)))); }
+function silinToEarth(y,m,s){ return dateFromSols(totalSolsForSilin(y,m,s)); }
+function earthToDar(y,m,d){ return darFromTotalSols(solsFromEpoch(new Date(Date.UTC(y,m-1,d)))); }
+function darToEarth(y,m,s){ return dateFromSols(totalSolsForDar(y,m,s)); }
+function silinToDar(y,m,s){ return darFromTotalSols(totalSolsForSilin(y,m,s)); }
+function darToSilin(y,m,s){ return silinFromTotalSols(totalSolsForDar(y,m,s)); }
+
+/* ══════════════════════════════════════════════
+   EARTH UTILITIES
+══════════════════════════════════════════════ */
+function getJDN(y,m,d){
+  return Math.floor((1461*(y+4800+Math.floor((m-14)/12)))/4)
+       + Math.floor((367*(m-2-12*Math.floor((m-14)/12)))/12)
+       - Math.floor((3*Math.floor((y+4900+Math.floor((m-14)/12))/100))/4)
+       + d - 32075;
+}
+function getDOY(y,m,d){ return Math.round((Date.UTC(y,m-1,d)-Date.UTC(y,0,1))/86400000)+1; }
+function getISOWeek(date){
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate()+4-day);
+  const ys = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil(((d-ys)/86400000+1)/7);
+}
+function daysInMonth(y,m){ return new Date(Date.UTC(y,m,0)).getUTCDate(); }
+
+/* ══════════════════════════════════════════════
+   ANALOG CLOCKS
+══════════════════════════════════════════════ */
+const EP = { bgC:'#1a2540',bgE:'#0d1520',bezel:'#388bff',
+  maj:'#7bb8ff',min:'rgba(100,160,255,.4)',num:'#aaccff',hH:'#e8f4ff',mH:'#7bb8ff',sH:'#ff6060',ctr:'#388bff' };
+const MP = { bgC:'#2a1505',bgE:'#160a02',bezel:'#ff6e32',
+  maj:'#ffaa70',min:'rgba(255,140,60,.4)',num:'#ffccaa',hH:'#fff0e8',mH:'#ffaa70',sH:'#00e5ff',ctr:'#ff6e32' };
+const DP2 = { bgC:'#1e0e2e',bgE:'#0f0518',bezel:'#c084fc',
+  maj:'#c084fc',min:'rgba(192,132,252,.35)',num:'#d8a8fc',hH:'#f0e8ff',mH:'#c084fc',sH:'#f0abfc',ctr:'#c084fc' };
+const EP_LIGHT = { bgC:'#dce8ff',bgE:'#f0f4ff',bezel:'#388bff',
+  maj:'#3070cc',min:'rgba(56,139,255,.35)',num:'#2050aa',hH:'#1a3a80',mH:'#388bff',sH:'#cc3333',ctr:'#388bff' };
+const MP_LIGHT = { bgC:'#ffe8d8',bgE:'#fff4ee',bezel:'#ff6e32',
+  maj:'#cc4400',min:'rgba(255,110,50,.35)',num:'#aa3300',hH:'#7a2000',mH:'#ff6e32',sH:'#0077aa',ctr:'#ff6e32' };
+const DP2_LIGHT = { bgC:'#eedcff',bgE:'#f8f0ff',bezel:'#c084fc',
+  maj:'#8840cc',min:'rgba(192,132,252,.35)',num:'#6620aa',hH:'#440088',mH:'#c084fc',sH:'#e040fb',ctr:'#c084fc' };
+const LST_DARK  = { bgC:'#001a1a',bgE:'#000d0d',bezel:'#00c8aa',
+  maj:'#00e8c8',min:'rgba(0,200,170,.35)',num:'#80ffe8',hH:'#e0fff8',mH:'#00c8aa',sH:'#ffee00',ctr:'#00c8aa' };
+const LST_LIGHT = { bgC:'#d0fff8',bgE:'#eafffe',bezel:'#009f88',
+  maj:'#007a66',min:'rgba(0,159,136,.35)',num:'#004d44',hH:'#002222',mH:'#009f88',sH:'#aa8800',ctr:'#009f88' };
+
+function drawClock(id, h, m, s, p){
+  const cv = document.getElementById(id); if(!cv) return;
+  const ctx = cv.getContext('2d'), cx=95, cy=95, r=88;
+  ctx.clearRect(0,0,190,190);
+  const g = ctx.createRadialGradient(cx,cy,18,cx,cy,r);
+  g.addColorStop(0,p.bgC); g.addColorStop(1,p.bgE);
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle=p.bezel; ctx.lineWidth=3; ctx.stroke();
+  for(let i=0; i<60; i++){
+    const a=(i/60)*Math.PI*2-Math.PI/2, isMaj=i%5===0, len=isMaj?11:5, rO=r-5;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*rO, cy+Math.sin(a)*rO);
+    ctx.lineTo(cx+Math.cos(a)*(rO-len), cy+Math.sin(a)*(rO-len));
+    ctx.strokeStyle=isMaj?p.maj:p.min; ctx.lineWidth=isMaj?2.5:1; ctx.stroke();
+  }
+  ctx.font='bold 10px Segoe UI,sans-serif'; ctx.fillStyle=p.num;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=1; i<=12; i++){
+    const a=(i/12)*Math.PI*2-Math.PI/2;
+    ctx.fillText(i, cx+Math.cos(a)*(r-21), cy+Math.sin(a)*(r-21));
+  }
+  // Draw minute numbers (every 5 min) at inner ring
+  ctx.font = '6px Segoe UI,sans-serif';
+  ctx.fillStyle = p.min;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  [5,10,15,20,25,30,35,40,45,50,55].forEach(mn => {
+    const a = (mn / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.fillText(mn, cx + Math.cos(a) * (r - 34), cy + Math.sin(a) * (r - 34));
+  });
+  function hand(angle, len, w, col){
+    ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(angle)*len, cy+Math.sin(angle)*len);
+    ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore();
+  }
+  hand((h%12+m/60)/12*Math.PI*2-Math.PI/2, 50, 5.5, p.hH);
+  hand((m+s/60)/60*Math.PI*2-Math.PI/2, 67, 3.5, p.mH);
+  hand(s/60*Math.PI*2-Math.PI/2, 75, 1.5, p.sH);
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fillStyle=p.ctr; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+}
+
+function drawLSTClock(id, lunour, centilunour, millilunour, p){
+  const cv = document.getElementById(id); if(!cv) return;
+  const ctx = cv.getContext('2d'), cx=95, cy=95, r=88;
+  ctx.clearRect(0,0,190,190);
+  const g = ctx.createRadialGradient(cx,cy,18,cx,cy,r);
+  g.addColorStop(0,p.bgC); g.addColorStop(1,p.bgE);
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle=p.bezel; ctx.lineWidth=3; ctx.stroke();
+
+  for(let i=0; i<24; i++){
+    const a=(i/24)*Math.PI*2-Math.PI/2;
+    const isMaj=(i%6===0), len=isMaj?11:5, rO=r-5;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*rO, cy+Math.sin(a)*rO);
+    ctx.lineTo(cx+Math.cos(a)*(rO-len), cy+Math.sin(a)*(rO-len));
+    ctx.strokeStyle=isMaj?p.maj:p.min; ctx.lineWidth=isMaj?2.5:1; ctx.stroke();
+  }
+  for(let i=0; i<10; i++){
+    const a=(i/10)*Math.PI*2-Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*(r-18), cy+Math.sin(a)*(r-18));
+    ctx.lineTo(cx+Math.cos(a)*(r-24), cy+Math.sin(a)*(r-24));
+    ctx.strokeStyle=p.min; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  ctx.font='bold 7.5px Segoe UI,sans-serif'; ctx.fillStyle=p.num;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0; i<24; i++){
+    const a=(i/24)*Math.PI*2-Math.PI/2;
+    ctx.fillText(i, cx+Math.cos(a)*(r-18), cy+Math.sin(a)*(r-18));
+  }
+  // Centilunour numbers (every 10, at inner ring ~r-32)
+  ctx.font = '6px Segoe UI,sans-serif';
+  ctx.fillStyle = p.min;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  [10,20,30,40,50,60,70,80,90].forEach(cl => {
+    const a = (cl / 100) * Math.PI * 2 - Math.PI / 2;
+    ctx.fillText(cl, cx + Math.cos(a) * (r - 32), cy + Math.sin(a) * (r - 32));
+  });
+
+  // 10 millilunour (second) tick marks at innermost ring
+  for(let i = 0; i < 10; i++){
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * (r - 38), cy + Math.sin(a) * (r - 38));
+    ctx.lineTo(cx + Math.cos(a) * (r - 42), cy + Math.sin(a) * (r - 42));
+    ctx.strokeStyle = p.sH; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // Millilunour numbers (0–9, at innermost ring ~r-46)
+  ctx.font = '6.5px Segoe UI,sans-serif';
+  ctx.fillStyle = p.sH;
+  for(let ml = 0; ml < 10; ml++){
+    const a = (ml / 10) * Math.PI * 2 - Math.PI / 2;
+    ctx.fillText(ml, cx + Math.cos(a) * (r - 46), cy + Math.sin(a) * (r - 46));
+  }
+
+  function hand(angle, len, w, col){
+    ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(angle)*len, cy+Math.sin(angle)*len);
+    ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore();
+  }
+  hand((lunour/24)*Math.PI*2-Math.PI/2, 50, 5.5, p.hH);
+  hand((centilunour/100)*Math.PI*2-Math.PI/2, 67, 3.5, p.mH);
+  hand((millilunour/10)*Math.PI*2-Math.PI/2, 75, 1.5, p.sH);
+
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fillStyle=p.ctr; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+}
+
+/* ══════════════════════════════════════════════
+   BUILD EARTH CALENDAR
+══════════════════════════════════════════════ */
+function buildEarthCal(nY, nM, tY, tM, tD, sel){
+  const firstDow = (new Date(Date.UTC(nY,nM-1,1)).getUTCDay()+6)%7;
+  const totalDays = daysInMonth(nY, nM);
+  let html = '<thead><tr>';
+  EARTH_DAYS_CAL.forEach(d => { html += `<th>${d}</th>`; });
+  html += '</tr></thead><tbody><tr>';
+  let col = 0;
+  for(let i=0; i<firstDow; i++){ html += '<td class="empty"></td>'; col++; }
+  for(let d=1; d<=totalDays; d++){
+    if(col>0 && col%7===0) html += '</tr><tr>';
+    const isT=(nY===tY&&nM===tM&&d===tD), isS=(sel===d);
+    let cls = isT&&isS?'today selected':isT?'today':isS?'selected':'';
+    html += `<td class="${cls}" onclick="onEarthClick(${d})">${d}</td>`;
+    col++;
+  }
+  while(col%7!==0){ html += '<td class="empty"></td>'; col++; }
+  html += '</tr></tbody>';
+  document.getElementById('cal-earth-table').innerHTML = html;
+  document.getElementById('earth-cal-title').textContent = `${EARTH_MONTHS[nM-1]} ${nY}`;
+  document.getElementById('earth-cal-sub').textContent = `${totalDays} días · ${Math.ceil((firstDow+totalDays)/7)} semanas`;
+  document.getElementById('e-yy-prev').disabled = (nY<=1);
+  document.getElementById('e-mm-prev').disabled = (nY<=1&&nM<=1);
+  document.getElementById('e-mm-next').disabled = (nY>=MAX_EARTH_YEAR&&nM>=12);
+  document.getElementById('e-yy-next').disabled = (nY>=MAX_EARTH_YEAR);
+}
+
+/* ══════════════════════════════════════════════
+   BUILD SILIN CALENDAR
+══════════════════════════════════════════════ */
+function buildMarsCal(nY, nM, tY, tM, tS, sel){
+  const monthLen = marsMonthLen(nY, nM);
+  let sBefore = 0;
+  for(let m=1; m<nM; m++) sBefore += marsMonthLen(nY, m);
+  const startWd = sBefore % 7;
+  let html = '<thead><tr>';
+  MARS_DAYS_SHORT.forEach(d => { html += `<th>${d}</th>`; });
+  html += '</tr></thead><tbody><tr>';
+  let col = 0;
+  for(let i=0; i<startWd; i++){ html += '<td class="empty"></td>'; col++; }
+  for(let s=1; s<=monthLen; s++){
+    if(col>0 && col%7===0) html += '</tr><tr>';
+    const isT=(nY===tY&&nM===tM&&s===tS), isS=(sel===s);
+    let cls = isT&&isS?'today selected':isT?'today':isS?'selected':'';
+    html += `<td class="${cls}" onclick="onMarsClick(${s})">${s}</td>`;
+    col++;
+  }
+  while(col%7!==0){ html += '<td class="empty"></td>'; col++; }
+  html += '</tr></tbody>';
+  document.getElementById('cal-mars-table').innerHTML = html;
+  document.getElementById('mars-cal-title').textContent = `${MARS_MONTHS[nM-1]} · MY ${nY}`;
+  document.getElementById('mars-cal-sub').textContent = `${monthLen} soles · ${Math.ceil((startWd+monthLen)/7)} semanas`;
+  document.getElementById('m-yy-prev').disabled = (nY<=1);
+  document.getElementById('m-mm-prev').disabled = (nY<=1&&nM<=1);
+  document.getElementById('m-mm-next').disabled = (nY>=MAX_MARS_YEAR&&nM>=12);
+  document.getElementById('m-yy-next').disabled = (nY>=MAX_MARS_YEAR);
+}
+
+/* ══════════════════════════════════════════════
+   BUILD DARIAN CALENDAR
+══════════════════════════════════════════════ */
+function buildDarCal(nY, nM, tY, tM, tS, sel){
+  const monthLen = darMonthLen(nY, nM);
+  const absStart = darSolsAtMonthStart(nY, nM);
+  const startWd  = (absStart + 1) % 7;  // +1: epoch=Sol Lunae(1)
+  let html = '<thead><tr>';
+  DAR_DAYS_SHORT.forEach(d => { html += `<th>${d}</th>`; });
+  html += '</tr></thead><tbody><tr>';
+  let col = 0;
+  for(let i=0; i<startWd; i++){ html += '<td class="empty"></td>'; col++; }
+  for(let s=1; s<=monthLen; s++){
+    if(col>0 && col%7===0) html += '</tr><tr>';
+    const isT=(nY===tY&&nM===tM&&s===tS), isS=(sel===s);
+    let cls = isT&&isS?'today selected':isT?'today':isS?'selected':'';
+    html += `<td class="${cls}" onclick="onDarClick(${s})">${s}</td>`;
+    col++;
+  }
+  while(col%7!==0){ html += '<td class="empty"></td>'; col++; }
+  html += '</tr></tbody>';
+  document.getElementById('cal-darian-table').innerHTML = html;
+  document.getElementById('darian-cal-title').textContent = `${DAR_MONTHS[nM-1]} · ${nY}`;
+  document.getElementById('darian-cal-sub').textContent =
+    `${monthLen} soles · ${Math.ceil((startWd+monthLen)/7)} sem · ${isDarLeap(nY)?'bisiesto':'común'}`;
+  document.getElementById('d-yy-prev').disabled = (nY<=1);
+  document.getElementById('d-mm-prev').disabled = (nY<=1&&nM<=1);
+  document.getElementById('d-mm-next').disabled = (nY>=MAX_DAR_YEAR&&nM>=24);
+  document.getElementById('d-yy-next').disabled = (nY>=MAX_DAR_YEAR);
+}
+
+function buildLSTCal(nLun, tLun, tLune, sel){
+  let html = '<thead><tr>';
+  ['I','II','III','IV','V','VI'].forEach(d=>{ html += `<th>${d}</th>`; });
+  html += '</tr></thead><tbody><tr>';
+  let col = 0;
+  for(let ln=1; ln<=LUNES_PER_LUNATION; ln++){
+    if(col>0 && col%6===0) html += '</tr><tr>';
+    const isT=(nLun===tLun&&ln===tLune), isS=(sel===ln);
+    let cls = isT&&isS?'today selected':isT?'today':isS?'selected':'';
+    html += `<td class="${cls}" onclick="onLSTClick(${ln})">${ln}</td>`;
+    col++;
+  }
+  while(col%6!==0){ html += '<td class="empty"></td>'; col++; }
+  html += '</tr></tbody>';
+  document.getElementById('cal-lst-table').innerHTML = html;
+  document.getElementById('lst-cal-title').textContent = 'Lunación ' + nLun;
+  document.getElementById('lst-cal-sub').textContent = `${LUNES_PER_LUNATION} lúnios · 1 lúnio = 23.625 h♁`;
+  document.getElementById('lst-lun-prev').disabled = (nLun<=1);
+  document.getElementById('lst-lune-prev').disabled = false;
+  document.getElementById('lst-lune-next').disabled = false;
+  document.getElementById('lst-lun-next').disabled = (nLun>=MAX_LST_LUNATION);
+}
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+function earthNav(unit, dir){
+  if(unit==='mm'){ eNavMonth+=dir; if(eNavMonth>12){eNavMonth=1;eNavYear++;} if(eNavMonth<1){eNavMonth=12;eNavYear--;} }
+  else eNavYear += dir;
+  eNavYear = Math.max(1, Math.min(MAX_EARTH_YEAR, eNavYear));
+  eNavMonth = Math.max(1, Math.min(12, eNavMonth));
+  eSelDay = null; eNavLive = false; setSelInfo('earth', null);
+  renderEarth(new Date());
+  if(syncMode) syncFromEarth(eNavYear, eNavMonth, 1, false);
+}
+
+function marsNav(unit, dir){
+  if(unit==='mm'){ mNavMonth+=dir; if(mNavMonth>12){mNavMonth=1;mNavYear++;} if(mNavMonth<1){mNavMonth=12;mNavYear--;} }
+  else mNavYear += dir;
+  mNavYear = Math.max(1, Math.min(MAX_MARS_YEAR, mNavYear));
+  mNavMonth = Math.max(1, Math.min(12, mNavMonth));
+  mSelSol = null; mNavLive = false; setSelInfo('mars', null);
+  renderMars(new Date());
+  if(syncMode) syncFromSilin(mNavYear, mNavMonth, 1, false);
+}
+
+function darianNav(unit, dir){
+  if(unit==='mm'){ dNavMonth+=dir; if(dNavMonth>24){dNavMonth=1;dNavYear++;} if(dNavMonth<1){dNavMonth=24;dNavYear--;} }
+  else dNavYear += dir;
+  dNavYear = Math.max(1, Math.min(MAX_DAR_YEAR, dNavYear));
+  dNavMonth = Math.max(1, Math.min(24, dNavMonth));
+  dSelSol = null; dNavLive = false; setSelInfo('darian', null);
+  renderDar(new Date());
+  if(syncMode) syncFromDar(dNavYear, dNavMonth, 1, false);
+}
+
+function lstNav(unit, dir){
+  if(unit==='lun') lstNavLunation += dir * 10;
+  else lstNavLunation += dir;
+  lstNavLunation = Math.max(1, Math.min(MAX_LST_LUNATION, lstNavLunation));
+  lstSelLune = null; lstNavLive = false; setSelInfo('lst', null);
+  renderLST(new Date());
+}
+
+/* ══════════════════════════════════════════════
+   3-WAY SYNC HELPERS
+══════════════════════════════════════════════ */
+function syncFromEarth(y, m, d, withSel){
+  const now = new Date();
+  const sil = earthToSilin(y,m,d);
+  mNavYear=sil.year; mNavMonth=sil.month; mSelSol=withSel?sil.sol:null; mNavLive=false;
+  const dar = earthToDar(y,m,d);
+  dNavYear=dar.year; dNavMonth=dar.month; dSelSol=withSel?dar.sol:null; dNavLive=false;
+  renderMars(now); renderDar(now);
+}
+
+function syncFromSilin(y, m, s, withSel){
+  const now = new Date();
+  const ed = silinToEarth(y,m,s);
+  eNavYear=ed.getUTCFullYear(); eNavMonth=ed.getUTCMonth()+1; eSelDay=withSel?ed.getUTCDate():null; eNavLive=false;
+  const dar = silinToDar(y,m,s);
+  dNavYear=dar.year; dNavMonth=dar.month; dSelSol=withSel?dar.sol:null; dNavLive=false;
+  renderEarth(now); renderDar(now);
+}
+
+function syncFromDar(y, m, s, withSel){
+  const now = new Date();
+  const ed = darToEarth(y,m,s);
+  eNavYear=ed.getUTCFullYear(); eNavMonth=ed.getUTCMonth()+1; eSelDay=withSel?ed.getUTCDate():null; eNavLive=false;
+  const sil = darToSilin(y,m,s);
+  mNavYear=sil.year; mNavMonth=sil.month; mSelSol=withSel?sil.sol:null; mNavLive=false;
+  renderEarth(now); renderMars(now);
+}
+
+/* ══════════════════════════════════════════════
+   CLICK HANDLERS
+══════════════════════════════════════════════ */
+function onEarthClick(d){
+  eSelDay = (eSelDay===d) ? null : d; eNavLive = false;
+  const now = new Date(); renderEarth(now);
+  const txt = eSelDay
+    ? EARTH_DAYS_FULL[new Date(Date.UTC(eNavYear,eNavMonth-1,eSelDay)).getUTCDay()]
+      + `, ${eSelDay} de ${EARTH_MONTHS[eNavMonth-1]} de ${eNavYear}` : null;
+  setSelInfo('earth', txt);
+  if(syncMode && eSelDay){
+    syncFromEarth(eNavYear, eNavMonth, eSelDay, true);
+    const sil = earthToSilin(eNavYear,eNavMonth,eSelDay);
+    setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
+    const dar = earthToDar(eNavYear,eNavMonth,eSelDay);
+    setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
+  }
+}
+
+function onMarsClick(sol){
+  mSelSol = (mSelSol===sol) ? null : sol; mNavLive = false;
+  const now = new Date(); renderMars(now);
+  const wd = (solsAtMonthStart(mNavYear,mNavMonth) + (mSelSol||1) - 1) % 7;
+  const txt = mSelSol ? `${MARS_DAYS_FULL[wd]}, Sol ${mSelSol} de ${MARS_MONTHS[mNavMonth-1]}, MY ${mNavYear}` : null;
+  setSelInfo('mars', txt);
+  if(syncMode && mSelSol){
+    syncFromSilin(mNavYear, mNavMonth, mSelSol, true);
+    const ed = silinToEarth(mNavYear,mNavMonth,mSelSol);
+    setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
+    const dar = silinToDar(mNavYear,mNavMonth,mSelSol);
+    setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
+  }
+}
+
+function onDarClick(sol){
+  dSelSol = (dSelSol===sol) ? null : sol; dNavLive = false;
+  const now = new Date(); renderDar(now);
+  const wd = (darSolsAtMonthStart(dNavYear,dNavMonth) + (dSelSol||1) - 1 + 1) % 7;
+  const txt = dSelSol ? `${DAR_DAYS_FULL[wd]}, Sol ${dSelSol} de ${DAR_MONTHS[dNavMonth-1]}, ${dNavYear}` : null;
+  setSelInfo('darian', txt);
+  if(syncMode && dSelSol){
+    syncFromDar(dNavYear, dNavMonth, dSelSol, true);
+    const ed = darToEarth(dNavYear,dNavMonth,dSelSol);
+    setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
+    const sil = darToSilin(dNavYear,dNavMonth,dSelSol);
+    setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
+  }
+}
+
+function onLSTClick(lune){
+  lstSelLune = (lstSelLune===lune) ? null : lune; lstNavLive = false;
+  const now = new Date(); renderLST(now);
+  const txt = lstSelLune ? `Lunación ${lstNavLunation}, Lúnio ${lstSelLune}` : null;
+  setSelInfo('lst', txt);
+}
+
+/* ══════════════════════════════════════════════
+   SEL INFO
+══════════════════════════════════════════════ */
+function setSelInfo(panel, txt){
+  const ids = { earth:'earth-sel-info', mars:'mars-sel-info', darian:'darian-sel-info', lst:'lst-sel-info' };
+  const el = document.getElementById(ids[panel]);
+  if(txt){ el.textContent = txt; el.classList.add('visible'); }
+  else   { el.textContent = '';  el.classList.remove('visible'); }
+}
+
+/* ══════════════════════════════════════════════
+   NOW BUTTONS
+══════════════════════════════════════════════ */
+function goEarthNow(){
+  eNavLive=true; eSelDay=null;
+  const now=new Date(); eNavYear=now.getUTCFullYear(); eNavMonth=now.getUTCMonth()+1;
+  setSelInfo('earth',null); renderEarth(now);
+}
+function goMarsNow(){
+  mNavLive=true; mSelSol=null;
+  const now=new Date(), sil=silinFromTotalSols(solsFromEpoch(now));
+  mNavYear=sil.year; mNavMonth=sil.month;
+  setSelInfo('mars',null); renderMars(now);
+}
+function goDarianNow(){
+  dNavLive=true; dSelSol=null;
+  const now=new Date(), dar=darFromTotalSols(solsFromEpoch(now));
+  dNavYear=dar.year; dNavMonth=dar.month;
+  setSelInfo('darian',null); renderDar(now);
+}
+function goLSTNow(){
+  lstNavLive=true; lstSelLune=null;
+  const now=new Date(), lst=getLST(now);
+  lstNavLunation=lst.lunation; lstNavLune=lst.lune;
+  setSelInfo('lst',null); renderLST(now);
+}
+
+/* ══════════════════════════════════════════════
+   SYNC TOGGLE
+══════════════════════════════════════════════ */
+function toggleSync(){
+  syncMode = !syncMode;
+  document.getElementById('sync-toggle').classList.toggle('active', syncMode);
+  document.getElementById('sync-label').textContent = syncMode ? 'Sincronizado' : 'Sincronizar calendarios';
+  ['panel-earth','panel-lunar','panel-mars','panel-darian'].forEach(id => {
+    document.getElementById(id).classList.toggle('synced', syncMode);
+  });
+}
+
+function updateGridLayout(){
+  const visiblePanels = ['panel-earth','panel-lunar','panel-mars','panel-darian']
+    .map(id => document.getElementById(id))
+    .filter(el => el && el.style.display !== 'none').length;
+  document.querySelector('.grid').classList.toggle('single-panel', visiblePanels === 1);
+}
+
+function setMarsMode(mode){
+  if(!['none','silin','darian'].includes(mode)) return;
+  marsMode = mode;
+  const showSilin = mode === 'silin';
+  const showDarian = mode === 'darian';
+  document.getElementById('panel-mars').style.display = showSilin ? '' : 'none';
+  document.getElementById('panel-darian').style.display = showDarian ? '' : 'none';
+
+  const btnEarth = document.getElementById('btn-mode-earth');
+  const btnSilin = document.getElementById('btn-mode-silin');
+  const btnDarian = document.getElementById('btn-mode-darian');
+  btnEarth.disabled = (mode === 'none');
+  btnSilin.disabled = showSilin;
+  btnDarian.disabled = showDarian;
+  btnEarth.classList.toggle('active-e', mode === 'none');
+  btnSilin.classList.toggle('active-m', showSilin);
+  btnDarian.classList.toggle('active-d', showDarian);
+  updateGridLayout();
+}
+
+function toggleTheme(){
+  darkMode = !darkMode;
+  document.body.classList.toggle('light', !darkMode);
+  document.getElementById('theme-icon-sun').style.display = darkMode ? 'block' : 'none';
+  document.getElementById('theme-icon-moon').style.display = darkMode ? 'none' : 'block';
+  const themeBtn = document.getElementById('theme-btn');
+  const tooltip = darkMode ? 'Modo claro' : 'Modo oscuro';
+  themeBtn.title = tooltip;
+  themeBtn.setAttribute('aria-label', tooltip);
+  tick();
+}
+
+function initTzSelect(){
+  const sel=document.getElementById('tz-select');
+  for(let o=-12;o<=14;o++){
+    const op=document.createElement('option');
+    op.value=o;
+    op.textContent='UTC'+(o>=0?'+':'')+o;
+    if(o===-5)op.selected=true;
+    sel.appendChild(op);
+  }
+}
+
+function onTzChange(){
+  selectedUtcOffset=parseInt(document.getElementById('tz-select').value);
+  const s=selectedUtcOffset>=0?'+':'';
+  document.querySelector('#panel-earth .badge').innerHTML='<span class="dot"></span>Tierra — UTC'+s+selectedUtcOffset;
+  renderEarth(new Date());
+}
+
+/* ══════════════════════════════════════════════
+   RENDER EARTH
+══════════════════════════════════════════════ */
+function renderEarth(now){
+  const local=new Date(now.getTime()+selectedUtcOffset*3600000);
+  const tY=local.getUTCFullYear(),tM=local.getUTCMonth()+1,tD=local.getUTCDate();
+  const tH=local.getUTCHours(),tMin=local.getUTCMinutes(),tS=local.getUTCSeconds();
+  const isLight = document.body.classList.contains('light');
+  document.getElementById('earth-day').textContent=tD;
+  document.getElementById('earth-month-year').textContent=EARTH_MONTHS[tM-1]+' '+tY;
+  document.getElementById('earth-weekday').textContent=EARTH_DAYS_FULL[local.getUTCDay()];
+  document.getElementById('earth-jdn').textContent=getJDN(tY,tM,tD);
+  document.getElementById('earth-doy').textContent=getDOY(tY,tM,tD);
+  document.getElementById('earth-week').textContent='S'+pad(getISOWeek(local));
+  drawClock('canvas-earth',tH,tMin,tS,isLight ? EP_LIGHT : EP);
+  document.getElementById('digital-earth').textContent=pad(tH)+':'+pad(tMin)+':'+pad(tS);
+  document.getElementById('earth-now-btn').classList.toggle('away',!eNavLive);
+  if(eNavLive){eNavYear=tY;eNavMonth=tM;}
+  buildEarthCal(eNavYear,eNavMonth,tY,tM,tD,eSelDay);
+}
+
+function getLST(now){
+  const elapsed = (now.getTime() - LST_EPOCH_MS) / 1000;
+  const lunation = Math.floor(elapsed / LUNATION_SEC) + 1;
+  const remLun   = elapsed % LUNATION_SEC;
+  const lune     = Math.floor(remLun / LUNE_SEC) + 1;
+  const remLune  = remLun % LUNE_SEC;
+  const lunour   = Math.floor(remLune / LUNOUR_SEC);
+  const remLH    = remLune % LUNOUR_SEC;
+  const centilunour = Math.floor(remLH / CENTILUNOUR_SEC);
+  const remCL    = remLH % CENTILUNOUR_SEC;
+  const millilunour = Math.floor(remCL / MILLILUNOUR_SEC);
+  return { lunation, lune, lunour, centilunour, millilunour };
+}
+
+function renderLST(now){
+  const lst = getLST(now);
+  const isLight = document.body.classList.contains('light');
+  const mlSec = MILLILUNOUR_SEC.toFixed(5);
+  const slowerPct = ((MILLILUNOUR_SEC - 1) * 100).toFixed(2);
+
+  document.getElementById('lst-lunation').textContent = lst.lunation;
+  document.getElementById('lst-lune-live').textContent = lst.lune;
+  document.getElementById('lst-lunour').textContent = pad(lst.lunour);
+  document.getElementById('lst-centilunour').textContent = pad(lst.centilunour);
+  document.getElementById('lst-millilunour').textContent = lst.millilunour;
+  document.getElementById('digital-lst').textContent = pad(lst.lunour)+':'+pad(lst.centilunour)+'.'+lst.millilunour;
+  document.getElementById('lst-time').textContent = pad(lst.lunour)+':'+pad(lst.centilunour)+'.'+lst.millilunour;
+  document.getElementById('lst-lunation-info').textContent = lst.lunation;
+  document.getElementById('lst-lune-info').textContent = lst.lune;
+  document.getElementById('lst-ml-val').textContent = mlSec;
+  document.getElementById('lst-pct').textContent = `+${slowerPct}%`;
+
+  drawLSTClock('canvas-lst', lst.lunour, lst.centilunour, lst.millilunour, isLight ? LST_LIGHT : LST_DARK);
+  document.getElementById('lst-now-btn').classList.toggle('away', !lstNavLive);
+
+  if(lstNavLive){ lstNavLunation = lst.lunation; lstNavLune = lst.lune; }
+  buildLSTCal(lstNavLunation, lst.lunation, lst.lune, lstSelLune);
+}
+
+/* ══════════════════════════════════════════════
+   RENDER MARS (SILIN)
+══════════════════════════════════════════════ */
+function renderMars(now){
+  const msd=getMSD(now), mtcH=getMTC(msd);
+  const silin=silinFromTotalSols(solsFromEpoch(now));
+  document.getElementById('mars-day').textContent        = silin.sol;
+  document.getElementById('mars-month-year').textContent = `${MARS_MONTHS[silin.month-1]} MY ${silin.year}`;
+  document.getElementById('mars-weekday').textContent    = MARS_DAYS_FULL[silin.weekday];
+  document.getElementById('mars-msd').textContent  = msd.toFixed(2);
+  document.getElementById('mars-soy').textContent  = silin.solOfYear;
+  document.getElementById('mars-my').textContent   = silin.year;
+  document.getElementById('mars-now-btn').classList.toggle('away', !mNavLive);
+  buildMarsCal(mNavYear, mNavMonth, silin.year, silin.month, silin.sol, mSelSol);
+}
+
+/* ══════════════════════════════════════════════
+   RENDER DARIAN
+══════════════════════════════════════════════ */
+function renderDar(now){
+  const msd=getMSD(now);
+  const dar=darFromTotalSols(solsFromEpoch(now));
+  document.getElementById('darian-day').textContent        = dar.sol;
+  document.getElementById('darian-month-year').textContent = `${DAR_MONTHS[dar.month-1]} ${dar.year}`;
+  document.getElementById('darian-weekday').textContent    = DAR_DAYS_FULL[dar.weekday];
+  document.getElementById('darian-msd').textContent = msd.toFixed(2);
+  document.getElementById('darian-soy').textContent = dar.solOfYear;
+  document.getElementById('darian-yr').textContent  = dar.year;
+  document.getElementById('darian-now-btn').classList.toggle('away', !dNavLive);
+  buildDarCal(dNavYear, dNavMonth, dar.year, dar.month, dar.sol, dSelSol);
+}
+
+/* ══════════════════════════════════════════════
+   MAIN TICK
+══════════════════════════════════════════════ */
+function tick(){
+  const now = new Date();
+  renderEarth(now);
+  renderLST(now);
+
+  // Mars clocks -- only active panel
+  const msd=getMSD(now), mtcH=getMTC(msd);
+  const {h,m,s}=mtcToHMS(mtcH);
+  const isLight = document.body.classList.contains('light');
+  if(marsMode === 'silin'){
+    document.getElementById('digital-mars').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    drawClock('canvas-mars', h, m, s, isLight ? MP_LIGHT : MP);
+    if(mNavLive){ const sil=silinFromTotalSols(solsFromEpoch(now)); mNavYear=sil.year; mNavMonth=sil.month; }
+    renderMars(now);
+  } else if(marsMode === 'darian'){
+    document.getElementById('digital-darian').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    drawClock('canvas-darian', h, m, s, isLight ? DP2_LIGHT : DP2);
+    if(dNavLive){ const dar=darFromTotalSols(solsFromEpoch(now)); dNavYear=dar.year; dNavMonth=dar.month; }
+    renderDar(now);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   DATE PICKER
+══════════════════════════════════════════════ */
+let dpPanel   = null;
+let dpYear    = 2026;
+let dpDecSt   = 1;
+let dpLevel   = 1;
+
+function openDP(panel){
+  dpPanel = panel;
+  dpYear  = panel==='earth' ? eNavYear : panel==='mars' ? mNavYear : dNavYear;
+  dpDecSt = Math.max(1, Math.floor((dpYear-1)/12)*12+1);
+  dpLevel = 1;
+  renderDP();
+  const pop = document.getElementById('dp-popover');
+  pop.style.display = 'block';
+  positionDP(panel);
+  requestAnimationFrame(() => pop.classList.add('dp-open'));
+}
+
+function closeDP(){
+  const pop = document.getElementById('dp-popover');
+  pop.classList.remove('dp-open');
+  setTimeout(() => { pop.style.display='none'; }, 160);
+  dpPanel = null;
+}
+
+function positionDP(panel){
+  const titleId = { earth:'earth-cal-title', mars:'mars-cal-title', darian:'darian-cal-title' }[panel];
+  const el   = document.getElementById(titleId);
+  const pop  = document.getElementById('dp-popover');
+  const rect = el.getBoundingClientRect();
+  const pw   = pop.offsetWidth || 224;
+  let left   = rect.left + (rect.width - pw) / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  let top    = rect.bottom + 6;
+  if(top + 300 > window.innerHeight) top = rect.top - 306;
+  pop.style.left = left + 'px';
+  pop.style.top  = top  + 'px';
+}
+
+function renderDP(){
+  const maxY   = dpPanel==='earth' ? MAX_EARTH_YEAR : dpPanel==='mars' ? MAX_MARS_YEAR : MAX_DAR_YEAR;
+  const maxM   = dpPanel==='darian' ? 24 : 12;
+  const curY   = dpPanel==='earth' ? eNavYear : dpPanel==='mars' ? mNavYear : dNavYear;
+  const curM   = dpPanel==='earth' ? eNavMonth : dpPanel==='mars' ? mNavMonth : dNavMonth;
+  const acCls  = dpPanel==='earth' ? 'dp-e' : dpPanel==='mars' ? 'dp-m' : 'dp-d';
+  const months = dpPanel==='earth' ? EARTH_MONTHS_S : dpPanel==='mars' ? DAR_MONTHS_S.slice(0,12) : DAR_MONTHS_S;
+  // Use actual Silin short names for mars panel
+  const marsMs = ['Éxo','Fob','Dei','Oli','Val','Hel','Elí','Arg','Ama','Arc','Aur','Eti'];
+
+  document.getElementById('dp-lvl1').style.display = dpLevel===1 ? 'block' : 'none';
+  document.getElementById('dp-lvl2').style.display = dpLevel===2 ? 'block' : 'none';
+
+  if(dpLevel===1){
+    document.getElementById('dp-year-lbl').textContent = dpYear;
+    document.getElementById('dp-yr-prev').disabled = (dpYear<=1);
+    document.getElementById('dp-yr-next').disabled = (dpYear>=maxY);
+    const mNames = dpPanel==='mars' ? marsMs : dpPanel==='earth' ? EARTH_MONTHS_S : DAR_MONTHS_S;
+    const gridCls = 'dp-grid ' + (maxM===24 ? 'dp-grid-24' : 'dp-grid-12');
+    let html = `<div class="${gridCls}">`;
+    for(let i=0; i<maxM; i++){
+      const isC = (dpYear===curY && (i+1)===curM);
+      html += `<div class="dp-cell${isC?' dp-cur '+acCls:''}" onclick="dpPickMonth(${i+1})">${mNames[i]||''}</div>`;
+    }
+    html += '</div>';
+    document.getElementById('dp-months-grid').innerHTML = html;
+  } else {
+    const end = Math.min(dpDecSt+11, maxY);
+    document.getElementById('dp-decade-lbl').textContent = `${dpDecSt}–${end}`;
+    document.getElementById('dp-dec-prev').disabled = (dpDecSt<=1);
+    document.getElementById('dp-dec-next').disabled = (dpDecSt+12>maxY);
+    let html = '<div class="dp-grid dp-grid-yr">';
+    for(let y=dpDecSt; y<=end; y++){
+      const isC = (y===dpYear);
+      html += `<div class="dp-cell${isC?' dp-cur '+acCls:''}" onclick="dpPickYear(${y})">${y}</div>`;
+    }
+    html += '</div>';
+    document.getElementById('dp-years-grid').innerHTML = html;
+  }
+}
+
+function dpYearStep(dir){
+  const maxY = dpPanel==='earth' ? MAX_EARTH_YEAR : dpPanel==='mars' ? MAX_MARS_YEAR : MAX_DAR_YEAR;
+  dpYear = Math.max(1, Math.min(maxY, dpYear+dir));
+  renderDP();
+}
+
+function dpGoLevel2(){
+  dpDecSt = Math.max(1, Math.floor((dpYear-1)/12)*12+1);
+  dpLevel = 2; renderDP();
+}
+
+function dpDecStep(dir){
+  const maxY = dpPanel==='earth' ? MAX_EARTH_YEAR : dpPanel==='mars' ? MAX_MARS_YEAR : MAX_DAR_YEAR;
+  dpDecSt = Math.max(1, Math.min(maxY-11, dpDecSt + dir*12));
+  renderDP();
+}
+
+function dpPickYear(y){
+  dpYear  = y;
+  dpDecSt = Math.max(1, Math.floor((y-1)/12)*12+1);
+  dpLevel = 1; renderDP();
+}
+
+function dpPickMonth(m){
+  const now = new Date();
+  if(dpPanel==='earth'){
+    eNavYear=dpYear; eNavMonth=m; eSelDay=null; eNavLive=false;
+    setSelInfo('earth',null); renderEarth(now);
+    if(syncMode) syncFromEarth(dpYear,m,1,false);
+  } else if(dpPanel==='mars'){
+    mNavYear=dpYear; mNavMonth=m; mSelSol=null; mNavLive=false;
+    setSelInfo('mars',null); renderMars(now);
+    if(syncMode) syncFromSilin(dpYear,m,1,false);
+  } else {
+    dNavYear=dpYear; dNavMonth=m; dSelSol=null; dNavLive=false;
+    setSelInfo('darian',null); renderDar(now);
+    if(syncMode) syncFromDar(dpYear,m,1,false);
+  }
+  closeDP();
+}
+
+// Close picker on outside click
+document.addEventListener('click', function(e){
+  if(!dpPanel) return;
+  const pop = document.getElementById('dp-popover');
+  if(pop.contains(e.target)) return;
+  const triggerIds = ['earth-cal-title','mars-cal-title','darian-cal-title'];
+  if(triggerIds.some(id => document.getElementById(id) === e.target)) return;
+  closeDP();
+}, true);
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+(function init(){
+  const now = new Date();
+  initTzSelect();
+  onTzChange();
+  eNavYear = now.getUTCFullYear(); eNavMonth = now.getUTCMonth()+1;
+  const sil = silinFromTotalSols(solsFromEpoch(now));
+  mNavYear = sil.year; mNavMonth = sil.month;
+  const dar = darFromTotalSols(solsFromEpoch(now));
+  dNavYear = dar.year; dNavMonth = dar.month;
+  const lstNow = getLST(now);
+  lstNavLunation = lstNow.lunation;
+  lstNavLune = lstNow.lune;
+  setMarsMode('none');
+  updateGridLayout();
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
