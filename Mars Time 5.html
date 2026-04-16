@@ -512,7 +512,7 @@ body.light canvas.clock-face{background:transparent;}
       <span class="tz-label">Zona:</span>
       <select id="tz-select" class="tz-select" onchange="onTzChange()"></select>
     </div>
-    <div class="tz-meta" id="earth-altpress">Altitud: — · Presion: —</div>
+    <div class="tz-meta" id="earth-altpress">Altitud: — · Presión: —</div>
     <div class="clock-wrap">
       <canvas class="clock-face" id="canvas-earth" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-earth">00:00:00</div>
@@ -660,7 +660,7 @@ body.light canvas.clock-face{background:transparent;}
         <div>Estado: <strong id="lunar-poi-light">—</strong></div>
         <div>Temperatura: <strong id="lunar-poi-temp">—</strong></div>
         <div>Coord.: <strong id="lunar-poi-coords">—</strong></div>
-        <div id="lunar-poi-altpress">Alt: — · Presion: —</div>
+        <div id="lunar-poi-altpress">Alt: — · Presión: —</div>
     </div>
     <div class="gravity-section">
       <div class="gravity-label">Gravedad —
@@ -982,8 +982,8 @@ const ROVERS = [
   { name:'Spirit', status:'Inactivo', active:false, lat:-14.5684, lon:175.4729, region:'Gusev Crater', landingUTC:Date.UTC(2004,0,4,0,0,0) }
 ];
 const MARS_POIS = [
-  { name:'Olympus Mons', lat:18.65, lon:226.2, desc:'Volcán más alto del sistema solar', altitudeM:21900, pressureAtm:0.00010, pressurePa:10 },
-  { name:'Valles Marineris', lat:-13.9, lon:301.0, desc:'Cañón más largo del sistema solar', altitudeM:-7000, pressureAtm:0.0120, pressurePa:1200 },
+  { name:'Olympus Mons', lat:18.65, lon:226.2, desc:'Volcán más alto del Sistema Solar', altitudeM:21900, pressureAtm:0.00010, pressurePa:10 },
+  { name:'Valles Marineris', lat:-13.9, lon:301.0, desc:'Cañón más largo del Sistema Solar', altitudeM:-7000, pressureAtm:0.0120, pressurePa:1200 },
   { name:'Hellas Planitia', lat:-42.7, lon:70.0, desc:'Cuenca de impacto profunda', altitudeM:-7152, pressureAtm:0.0145, pressurePa:1470 },
   { name:'Polo Norte', lat:90.0, lon:0.0, desc:'Planum Boreum', altitudeM:3000, pressureAtm:0.0070, pressurePa:710 },
   { name:'Polo Sur', lat:-90.0, lon:0.0, desc:'Planum Australe', altitudeM:3500, pressureAtm:0.0065, pressurePa:660 },
@@ -1078,6 +1078,11 @@ const MINUTES_PER_HOUR = 60;
 const HOURS_PER_MTC_DAY = 24;
 const API_TIMEOUT_MS = 8000;
 const MAX_DISPLAY_GRAVITY = 9.8337;
+const STAR_GENERATION_SEED = 42;
+const DEFAULT_STAR_COUNT = 120;
+const MOON_STAR_COUNT = 180;
+const EARTH_BARO_FACTOR = 0.0000225577;
+const EARTH_BARO_EXPONENT = 5.25588;
 const earthAstroCache = new Map();
 let earthAstroDisplay = { sunrise:'N/D', sunset:'N/D', moonrise:'N/D', moonset:'N/D', moonphase:'N/D' };
 let selectedEarthGrav = EARTH_GRAVITY_REGIONS[2].id;
@@ -1408,8 +1413,8 @@ function lerpColor(c1, c2, t) {
   const h = s => parseInt(s, 16);
   const r1=h(c1.slice(1,3)), g1=h(c1.slice(3,5)), b1=h(c1.slice(5,7));
   const r2=h(c2.slice(1,3)), g2=h(c2.slice(3,5)), b2=h(c2.slice(5,7));
-  const r=Math.round(r1+(r2-r1)*t), gv=Math.round(g1+(g2-g1)*t), b=Math.round(b1+(b2-b1)*t);
-  return `#${r.toString(16).padStart(2,'0')}${gv.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  const r=Math.round(r1+(r2-r1)*t), g=Math.round(g1+(g2-g1)*t), b=Math.round(b1+(b2-b1)*t);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
 }
 function setupHiDPICanvas(canvas) {
   const dpr = window.devicePixelRatio || 1;
@@ -1432,11 +1437,11 @@ function resizeHorizonCanvas(canvasId) {
   canvas.width = cssW * dpr;
   canvas.height = cssH * dpr;
   const horizonY = Math.floor(cssH * 0.68);
-  horizonStarCache[canvasId] = generateStars(canvasId === 'horizon-moon' ? 180 : 120, cssW, cssH, horizonY);
+  horizonStarCache[canvasId] = generateStars(canvasId === 'horizon-moon' ? MOON_STAR_COUNT : DEFAULT_STAR_COUNT, cssW, cssH, horizonY);
 }
 function generateStars(count, W, H, horizonY) {
   const stars = [];
-  let seed = 42;
+  let seed = STAR_GENERATION_SEED;
   function rand() {
     seed = (seed * 1664525 + 1013904223) & 0xffffffff;
     return (seed >>> 0) / 0xffffffff;
@@ -1613,7 +1618,7 @@ function drawHorizonCanvas(canvas, bodies, type, skyDarkness) {
       : getSkyGradientMoon(ctx, W, H, horizonY);
   ctx.fillStyle = sky;
   ctx.fillRect(0,0,W,horizonY);
-  const stars = horizonStarCache[canvas.id] || generateStars(type === 'moon' ? 180 : 120, W, H, horizonY);
+  const stars = horizonStarCache[canvas.id] || generateStars(type === 'moon' ? MOON_STAR_COUNT : DEFAULT_STAR_COUNT, W, H, horizonY);
   drawStars(ctx, stars, skyDarkness);
   const groundGrad = ctx.createLinearGradient(0, horizonY, 0, H);
   if (type === 'earth') {
@@ -1690,7 +1695,7 @@ function updateHorizons(now) {
   );
   const earthInfo = document.getElementById('horizon-earth-info');
   if(earthInfo){
-    earthInfo.innerHTML = `<strong>Sol:</strong> ${formatAzAlt(earthSun)} | <strong>Sale</strong> ${earthAstroDisplay.sunrise} <strong>Pone</strong> ${earthAstroDisplay.sunset} | <strong>Luna:</strong> ${formatAzAlt(earthMoon, true)} | <strong>Marte:</strong> ${formatAzAlt(earthMars)}`;
+    earthInfo.textContent = `Sol: ${formatAzAlt(earthSun)} | Sale ${earthAstroDisplay.sunrise} Pone ${earthAstroDisplay.sunset} | Luna: ${formatAzAlt(earthMoon, true)} | Marte: ${formatAzAlt(earthMars)}`;
   }
 
   const MSD = getMSD(current);
@@ -1718,7 +1723,7 @@ function updateHorizons(now) {
   const sunsetMtc = wrap24(18 - offset);
   const marsInfo = document.getElementById('horizon-mars-info');
   if(marsInfo){
-    marsInfo.innerHTML = `<strong>Sol:</strong> sale ${formatHHMM(sunriseMtc)} MTC pone ${formatHHMM(sunsetMtc)} MTC | <strong>Fobos:</strong> Az ${pad(Math.round(wrap360(phobos.azimuth)),3)}° Alt ${Math.round(phobos.altitude)}° (sale por O, pone por E) | <strong>Deimos:</strong> Az ${pad(Math.round(wrap360(deimos.azimuth)),3)}° Alt ${Math.round(deimos.altitude)}° | <strong>Tierra:</strong> ${formatAzAlt(earthFromMars)}`;
+    marsInfo.textContent = `Sol: sale ${formatHHMM(sunriseMtc)} MTC pone ${formatHHMM(sunsetMtc)} MTC | Fobos: Az ${pad(Math.round(wrap360(phobos.azimuth)),3)}° Alt ${Math.round(phobos.altitude)}° (sale por O, pone por E) | Deimos: Az ${pad(Math.round(wrap360(deimos.azimuth)),3)}° Alt ${Math.round(deimos.altitude)}° | Tierra: ${formatAzAlt(earthFromMars)}`;
   }
 
   const sunPosMoon = getSunFromMoon(current, selectedMoonLat, selectedMoonLon);
@@ -1737,7 +1742,7 @@ function updateHorizons(now) {
   );
   const moonInfo = document.getElementById('horizon-moon-info');
   if(moonInfo){
-    moonInfo.innerHTML = `<strong>Sol:</strong> ${formatAzAlt(sunPosMoon)} (${sunPosMoon.isDaytime ? 'dia lunar' : 'noche lunar'}) | <strong>Tierra:</strong> ${formatAzAlt(earthPosMoon)} | <strong>Marte:</strong> ${formatAzAlt(marsPosMoon)} | <strong>Temperatura:</strong> ${moonLight.temp>0?'+':''}${moonLight.temp}°C`;
+    moonInfo.textContent = `Sol: ${formatAzAlt(sunPosMoon)} (${sunPosMoon.isDaytime ? 'día lunar' : 'noche lunar'}) | Tierra: ${formatAzAlt(earthPosMoon)} | Marte: ${formatAzAlt(marsPosMoon)} | Temperatura: ${moonLight.temp>0?'+':''}${moonLight.temp}°C`;
   }
 }
 function renderMarsAstroEvents(now, panelPrefix){
@@ -2444,8 +2449,8 @@ function onTzChange(){
   document.querySelector('#panel-earth .badge').innerHTML=`<span class="dot"></span>Tierra — ${label}`;
   const pressure = Number.isFinite(city.pressureAtm)
     ? city.pressureAtm
-    : Math.pow(1 - 0.0000225577 * (city.altM || 0), 5.25588);
-  document.getElementById('earth-altpress').textContent = `Altitud: ${(city.altM || 0).toLocaleString('es-MX')} m snm · Presion: ${pressure.toFixed(3)} atm`;
+    : Math.pow(1 - EARTH_BARO_FACTOR * (city.altM || 0), EARTH_BARO_EXPONENT);
+  document.getElementById('earth-altpress').textContent = `Altitud: ${(city.altM || 0).toLocaleString('es-MX')} m snm · Presión: ${pressure.toFixed(3)} atm`;
   const hsub = document.getElementById('hblock-earth-sub');
   if(hsub) hsub.textContent = `${label} · ${city.name}`;
   renderEarth(new Date());
@@ -2799,18 +2804,29 @@ function renderMarsPoi(now){
   const tempC = estimateMarsTempC(ls, localMtc);
   const sunriseLocal = 6;
   const sunsetLocal = 18;
-  document.getElementById('mars-poi-card').innerHTML = `
-    <h4>${poi.name}</h4>
-    <div class="poi-meta">
-      <div>Coord.: ${formatLat(poi.lat)} ${formatLon(poi.lon)}</div>
-      <div>${poi.desc}</div>
-      <div>Alt: <strong>${poi.altitudeM>=0?'+':''}${poi.altitudeM.toLocaleString('es-MX')} m</strong> · Presion: <strong>${poi.pressureAtm.toFixed(4)} atm (${Math.round(poi.pressurePa)} Pa)</strong></div>
-      <div>Hora MTC local: <strong>${pad(local.h)}:${pad(local.m)}:${pad(local.s)}</strong></div>
-      <div>Sol sale local: <strong>${formatHHMM(sunriseLocal)} MTC</strong></div>
-      <div>Sol pone local: <strong>${formatHHMM(sunsetLocal)} MTC</strong></div>
-      <div>Estación (Ls ${ls.toFixed(1)}°): <strong>N ${seasons.north} · S ${seasons.south}</strong></div>
-      <div>Temperatura: <strong>${Math.round(tempC)}°C</strong> (estimado modelo físico)</div>
-    </div>`;
+  const card = document.getElementById('mars-poi-card');
+  if(!card) return;
+  card.replaceChildren();
+  const h4 = document.createElement('h4');
+  h4.textContent = poi.name;
+  const meta = document.createElement('div');
+  meta.className = 'poi-meta';
+  [
+    `Coord.: ${formatLat(poi.lat)} ${formatLon(poi.lon)}`,
+    poi.desc,
+    `Alt: ${poi.altitudeM>=0?'+':''}${poi.altitudeM.toLocaleString('es-MX')} m · Presión: ${poi.pressureAtm.toFixed(4)} atm (${Math.round(poi.pressurePa)} Pa)`,
+    `Hora MTC local: ${pad(local.h)}:${pad(local.m)}:${pad(local.s)}`,
+    `Sol sale local: ${formatHHMM(sunriseLocal)} MTC`,
+    `Sol pone local: ${formatHHMM(sunsetLocal)} MTC`,
+    `Estación (Ls ${ls.toFixed(1)}°): N ${seasons.north} · S ${seasons.south}`,
+    `Temperatura: ${Math.round(tempC)}°C (estimado modelo físico)`
+  ].forEach(text => {
+    const row = document.createElement('div');
+    row.textContent = text;
+    meta.appendChild(row);
+  });
+  card.appendChild(h4);
+  card.appendChild(meta);
 }
 
 function renderLunarPoi(now){
@@ -2824,7 +2840,7 @@ function renderLunarPoi(now){
   document.getElementById('lunar-poi-light').textContent = isPole ? 'Sombra permanente polar' : (isDay ? 'Día lunar' : 'Noche lunar');
   document.getElementById('lunar-poi-temp').textContent = `~${temp>0?'+':''}${temp}°C ${tempLabel}`;
   document.getElementById('lunar-poi-coords').textContent = `${poi.name} · ${formatLat(poi.lat)} ${formatLon(poi.lon)}`;
-  document.getElementById('lunar-poi-altpress').textContent = `Alt: ${poi.altitudeM>=0?'+':''}${poi.altitudeM.toLocaleString('es-MX')} m (datum lunar) · Presion: vacio (10⁻¹⁰ Pa)`;
+  document.getElementById('lunar-poi-altpress').textContent = `Alt: ${poi.altitudeM>=0?'+':''}${poi.altitudeM.toLocaleString('es-MX')} m (datum lunar) · Presión: vacío (10⁻¹⁰ Pa)`;
   const lunarGr = LUNAR_GRAVITY_REGIONS.find(r => r.id === selectedLunarGrav) || LUNAR_GRAVITY_REGIONS[0];
   updateGravityDisplay('lunar', lunarGr.g);
 }
