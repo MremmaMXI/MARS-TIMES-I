@@ -383,6 +383,14 @@ body.light .tz-select{background:#f0f2ff}
 .poi-block-moon .poi-block-title{color:var(--la)}
 .poi-block-mars .poi-block-title{color:var(--ma)}
 .poi-block-body{padding:.8rem 1rem}
+.sound-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:.9rem;padding:.15rem .3rem;border-radius:6px;
+  transition:transform .12s,opacity .12s;
+  opacity:.55;line-height:1;
+}
+.sound-btn:hover{opacity:1;transform:scale(1.15)}
+.sound-btn.active{opacity:1}
 .horizon-toggles{
   display:flex;align-items:center;gap:.45rem;justify-content:center;flex-wrap:wrap;
   width:100%;max-width:1300px
@@ -618,6 +626,7 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   <div class="panel earth" id="panel-earth">
     <div class="panel-top">
       <div class="badge"><span class="dot"></span>Tierra — UTC</div>
+      <button class="sound-btn" id="snd-earth" onclick="toggleSound('earth')" title="Sonido Tierra">🔊</button>
       <button class="now-btn" id="earth-now-btn" onclick="goEarthNow()">Hoy</button>
     </div>
     <div class="tz-bar">
@@ -708,6 +717,8 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   <div class="panel lunar" id="panel-lunar">
     <div class="panel-top">
       <div class="badge"><span class="dot"></span>Luna — LST</div>
+      <button class="sound-btn" id="snd-moonLST" onclick="toggleSound('moonLST')" title="Sonido Luna NASA/LST">🔇</button>
+      <button class="sound-btn" id="snd-moonFranklin" onclick="toggleSound('moonFranklin')" title="Sonido Luna Franklin" style="display:none">🔇</button>
       <button class="now-btn" id="lst-now-btn" onclick="goLSTNow()">Ahora</button>
     </div>
     <div class="lunar-mode-tabs">
@@ -835,6 +846,7 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   <div class="panel mars" id="panel-mars" style="display:none">
     <div class="panel-top">
       <div class="badge"><span class="dot"></span>Marte — Silin</div>
+      <button class="sound-btn" id="snd-marsSilin" onclick="toggleSound('marsSilin')" title="Sonido Marte Silin">🔇</button>
       <button class="now-btn" id="mars-now-btn" onclick="goMarsNow()">Ahora</button>
     </div>
     <div class="tz-bar">
@@ -930,6 +942,7 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   <div class="panel darian" id="panel-darian" style="display:none">
     <div class="panel-top">
       <div class="badge"><span class="dot"></span>Marte — Dariano</div>
+      <button class="sound-btn" id="snd-marsDarian" onclick="toggleSound('marsDarian')" title="Sonido Marte Dariano">🔇</button>
       <button class="now-btn" id="darian-now-btn" onclick="goDarianNow()">Ahora</button>
     </div>
     <div class="tz-bar">
@@ -1187,6 +1200,48 @@ const LUNAR_POIS = [
   { name:'Cráter Shackleton', lat:-89.9, lon:0.0, desc:'Cráter en polo sur', altitudeM:-3600 },
   { name:'Apollo 11 Landing Site', lat:0.67, lon:23.47, desc:'Mare Tranquillitatis · Apollo 11', altitudeM:-3700 }
 ];
+const EARTH_POIS = [
+  { name:'Monte Everest', lat:27.9881, lon:86.9250, elev:8849, cat:'⛰️', desc:'Punto más alto de la Tierra, Nepal/Tibet' },
+  { name:'K2', lat:35.8825, lon:76.5133, elev:8611, cat:'⛰️', desc:'Segunda montaña más alta, Pakistan/China' },
+  { name:'Mauna Kea', lat:19.8207, lon:-155.4681, elev:4205, cat:'🌋', desc:'Volcán; desde base oceánica supera en altura al Everest' },
+  { name:'Mont Blanc', lat:45.8326, lon:6.8652, elev:4808, cat:'⛰️', desc:'Pico más alto de los Alpes, Francia/Italia' },
+  { name:'Volcán Chimborazo', lat:-1.4691, lon:-78.8174, elev:6263, cat:'🌋', desc:'Punto más alejado del centro de la Tierra, Ecuador' },
+  { name:'Ojos del Salado', lat:-27.1097, lon:-68.5413, elev:6893, cat:'🌋', desc:'Volcán activo más alto del mundo, Chile/Argentina' },
+  { name:'Denali', lat:63.0694, lon:-151.0074, elev:6190, cat:'⛰️', desc:'Pico más alto de América del Norte, Alaska' },
+  { name:'Kilimanjaro', lat:-3.0674, lon:37.3556, elev:5895, cat:'🌋', desc:'Volcán y punto más alto de África, Tanzania' },
+  { name:'Elbrus', lat:43.3499, lon:42.4453, elev:5642, cat:'🌋', desc:'Punto más alto de Europa, Rusia' },
+  { name:'Fosa de las Marianas', lat:11.3733, lon:142.5917, elev:-10935, cat:'🌊', desc:'Punto más profundo de los océanos, Pacífico' },
+  { name:'Fosa Puerto Rico', lat:19.7333, lon:-66.5000, elev:-8376, cat:'🌊', desc:'Punto más profundo del Atlántico' },
+  { name:'Mar Muerto', lat:31.5000, lon:35.5000, elev:-430, cat:'🌊', desc:'Superficie de agua más baja del planeta, Israel/Jordania' },
+  { name:'Lago Baikal (fondo)', lat:53.5000, lon:108.1667, elev:-1186, cat:'🌊', desc:'Lago más profundo del mundo, Siberia' },
+  { name:'Valle de la Muerte', lat:36.5323, lon:-116.9325, elev:-86, cat:'🏜️', desc:'Punto más bajo de América del Norte' },
+  { name:'Lago Assal', lat:11.6560, lon:42.4140, elev:-155, cat:'🌊', desc:'Punto más bajo de África, Djibouti' },
+  { name:'Lago Eyre (Kati Thanda)', lat:-29.4000, lon:137.3667, elev:-15, cat:'🌊', desc:'Punto más bajo de Australia, a menudo seco' },
+  { name:'Polo Norte', lat:90.0000, lon:0.0000, elev:0, cat:'🧊', desc:'Polo geográfico norte, Ártico' },
+  { name:'Polo Sur', lat:-90.0000, lon:0.0000, elev:2835, cat:'🧊', desc:'Polo geográfico sur, Antártida' },
+  { name:'Polo de Inaccesibilidad', lat:-82.9000, lon:55.0000, elev:3718, cat:'🧊', desc:'Punto más alejado de cualquier océano, Antártida' },
+  { name:'Atacama (San Pedro)', lat:-22.9087, lon:-68.2000, elev:2408, cat:'🏜️', desc:'Desierto no polar más árido del mundo, Chile' },
+  { name:'Sahara (Tamanrasset)', lat:22.7853, lon:5.5228, elev:1377, cat:'🏜️', desc:'Desierto cálido más grande del mundo, Argelia' },
+  { name:'Gobi', lat:42.5833, lon:103.4167, elev:1500, cat:'🏜️', desc:'Desierto frío más grande de Asia, Mongolia/China' },
+  { name:'Cataratas Victoria', lat:-17.9244, lon:25.8567, elev:900, cat:'💧', desc:'Catarata más ancha del mundo, Zambia/Zimbabwe' },
+  { name:'Cataratas del Ángel', lat:5.9697, lon:-62.5355, elev:979, cat:'💧', desc:'Catarata más alta del mundo, Venezuela' },
+  { name:'Amazonas (desemboc.)', lat:0.1694, lon:-50.0939, elev:0, cat:'🌿', desc:'Río con mayor caudal del mundo, Brasil' },
+  { name:'Río Nilo (nacimiento)', lat:-2.3167, lon:29.3333, elev:2040, cat:'🌿', desc:'Río más largo del mundo, Rwanda/Uganda' },
+  { name:'Cueva de Krubera', lat:43.4122, lon:40.3464, elev:-2197, cat:'🕳️', desc:'Cueva más profunda del mundo, Georgia' },
+  { name:'Sistema Mammoth Cave', lat:37.1878, lon:-86.1003, elev:229, cat:'🕳️', desc:'Sistema de cuevas más largo del mundo, EE.UU.' },
+  { name:'La Rinconada', lat:-14.6333, lon:-69.4500, elev:5100, cat:'🏙️', desc:'Ciudad permanente más alta del mundo, Perú' },
+  { name:'Lhasa', lat:29.6500, lon:91.1000, elev:3656, cat:'🏙️', desc:'Capital más alta del mundo, Tíbet' },
+  { name:'Quito', lat:-0.2295, lon:-78.5243, elev:2850, cat:'🏙️', desc:'Capital ecuatorial a gran altitud, Ecuador' },
+  { name:'Ciudad de México', lat:19.4326, lon:-99.1332, elev:2240, cat:'🏙️', desc:'Una de las metrópolis más altas del mundo' },
+  { name:'Stonehenge', lat:51.1789, lon:-1.8262, elev:102, cat:'🗿', desc:'Monumento megalítico prehistórico, Reino Unido' },
+  { name:'Meridiano de Greenwich', lat:51.4778, lon:0.0000, elev:47, cat:'🌐', desc:'Longitud 0°, referencia UTC, Londres' },
+  { name:'Chichén Itzá', lat:20.6843, lon:-88.5678, elev:30, cat:'🗿', desc:'Ciudad maya y observatorio astronómico, México' },
+  { name:'Pirámide de Giza', lat:29.9792, lon:31.1342, elev:138, cat:'🗿', desc:'La mayor pirámide de Egipto' },
+  { name:'Observatorio Mauna Kea', lat:19.8228, lon:-155.4681, elev:4205, cat:'🔭', desc:'Mayor complejo de observatorios astronómicos' },
+  { name:'CERN', lat:46.2330, lon:6.0557, elev:427, cat:'⚛️', desc:'Laboratorio de física de partículas, Ginebra' },
+  { name:'Cape Canaveral', lat:28.3922, lon:-80.6077, elev:3, cat:'🚀', desc:'Centro de lanzamiento espacial, Florida' },
+  { name:'Baikonur Cosmodrome', lat:45.9200, lon:63.3422, elev:90, cat:'🚀', desc:'Primer cosmódromo del mundo, Kazajistán' }
+];
 const EARTH_UTC_CITIES = [
   { offset:0, name:'Londres', lat:51.51, lon:-0.13, altM:11, pressureAtm:1.000, api:true },
   { offset:1, name:'París', lat:48.85, lon:2.35, altM:35, pressureAtm:0.996, api:true },
@@ -1199,51 +1254,631 @@ const EARTH_UTC_CITIES = [
   { offset:12, name:'Auckland', lat:-36.86, lon:174.76, altM:7, pressureAtm:1.000, api:true }
 ];
 const EARTH_CITIES = [
-  { name:'Nueva York', lat:40.71, lon:-74.01, utc:-5, country:'EE.UU.' }, { name:'Los Ángeles', lat:34.05, lon:-118.24, utc:-8, country:'EE.UU.' },
-  { name:'Chicago', lat:41.88, lon:-87.63, utc:-6, country:'EE.UU.' }, { name:'Miami', lat:25.77, lon:-80.19, utc:-5, country:'EE.UU.' },
-  { name:'Toronto', lat:43.65, lon:-79.38, utc:-5, country:'Canadá' }, { name:'Vancouver', lat:49.28, lon:-123.12, utc:-8, country:'Canadá' },
-  { name:'Ciudad de México', lat:19.43, lon:-99.13, utc:-6, country:'México' }, { name:'Cancún', lat:21.16, lon:-86.85, utc:-5, country:'México' },
-  { name:'Playa del Carmen', lat:20.63, lon:-87.08, utc:-5, country:'México' }, { name:'Monterrey', lat:25.67, lon:-100.31, utc:-6, country:'México' },
-  { name:'Guadalajara', lat:20.66, lon:-103.35, utc:-6, country:'México' }, { name:'Tijuana', lat:32.53, lon:-117.04, utc:-8, country:'México' },
-  { name:'La Habana', lat:23.14, lon:-82.36, utc:-5, country:'Cuba' }, { name:'Bogotá', lat:4.71, lon:-74.07, utc:-5, country:'Colombia' },
-  { name:'Lima', lat:-12.05, lon:-77.04, utc:-5, country:'Perú' }, { name:'Santiago', lat:-33.45, lon:-70.67, utc:-3, country:'Chile' },
-  { name:'Buenos Aires', lat:-34.61, lon:-58.38, utc:-3, country:'Argentina' }, { name:'São Paulo', lat:-23.55, lon:-46.63, utc:-3, country:'Brasil' },
-  { name:'Río de Janeiro', lat:-22.91, lon:-43.17, utc:-3, country:'Brasil' }, { name:'Brasília', lat:-15.78, lon:-47.93, utc:-3, country:'Brasil' },
-  { name:'Caracas', lat:10.49, lon:-66.88, utc:-4, country:'Venezuela' }, { name:'Quito', lat:-0.22, lon:-78.51, utc:-5, country:'Ecuador' },
-  { name:'Asunción', lat:-25.29, lon:-57.65, utc:-4, country:'Paraguay' }, { name:'Montevideo', lat:-34.90, lon:-56.19, utc:-3, country:'Uruguay' },
-  { name:'Londres', lat:51.51, lon:-0.13, utc:0, country:'Reino Unido' }, { name:'París', lat:48.86, lon:2.35, utc:1, country:'Francia' },
-  { name:'Madrid', lat:40.42, lon:-3.70, utc:1, country:'España' }, { name:'Barcelona', lat:41.39, lon:2.17, utc:1, country:'España' },
-  { name:'Berlín', lat:52.52, lon:13.40, utc:1, country:'Alemania' }, { name:'Múnich', lat:48.14, lon:11.58, utc:1, country:'Alemania' },
-  { name:'Roma', lat:41.90, lon:12.50, utc:1, country:'Italia' }, { name:'Milán', lat:45.46, lon:9.19, utc:1, country:'Italia' },
-  { name:'Amsterdam', lat:52.37, lon:4.90, utc:1, country:'Países Bajos' }, { name:'Bruselas', lat:50.85, lon:4.35, utc:1, country:'Bélgica' },
-  { name:'Lisboa', lat:38.72, lon:-9.14, utc:0, country:'Portugal' }, { name:'Moscú', lat:55.75, lon:37.62, utc:3, country:'Rusia' },
-  { name:'Kiev', lat:50.45, lon:30.52, utc:2, country:'Ucrania' }, { name:'Estambul', lat:41.01, lon:28.96, utc:3, country:'Turquía' },
-  { name:'Atenas', lat:37.98, lon:23.73, utc:2, country:'Grecia' }, { name:'Viena', lat:48.21, lon:16.37, utc:1, country:'Austria' },
-  { name:'Zürich', lat:47.38, lon:8.54, utc:1, country:'Suiza' }, { name:'Estocolmo', lat:59.33, lon:18.07, utc:1, country:'Suecia' },
-  { name:'Helsinki', lat:60.17, lon:24.94, utc:2, country:'Finlandia' }, { name:'Dublín', lat:53.33, lon:-6.25, utc:0, country:'Irlanda' },
-  { name:'Reikiavik', lat:64.14, lon:-21.89, utc:0, country:'Islandia' }, { name:'El Cairo', lat:30.04, lon:31.24, utc:2, country:'Egipto' },
-  { name:'Lagos', lat:6.45, lon:3.40, utc:1, country:'Nigeria' }, { name:'Nairobi', lat:-1.29, lon:36.82, utc:3, country:'Kenia' },
-  { name:'Johannesburgo', lat:-26.20, lon:28.04, utc:2, country:'Sudáfrica' }, { name:'Casablanca', lat:33.59, lon:-7.62, utc:1, country:'Marruecos' },
-  { name:'Pekín', lat:39.91, lon:116.39, utc:8, country:'China' }, { name:'Shanghái', lat:31.23, lon:121.47, utc:8, country:'China' },
-  { name:'Hong Kong', lat:22.32, lon:114.17, utc:8, country:'China' }, { name:'Tokio', lat:35.69, lon:139.69, utc:9, country:'Japón' },
-  { name:'Osaka', lat:34.69, lon:135.50, utc:9, country:'Japón' }, { name:'Seúl', lat:37.57, lon:126.98, utc:9, country:'Corea del Sur' },
-  { name:'Bangkok', lat:13.75, lon:100.52, utc:7, country:'Tailandia' }, { name:'Singapur', lat:1.35, lon:103.82, utc:8, country:'Singapur' },
-  { name:'Kuala Lumpur', lat:3.14, lon:101.69, utc:8, country:'Malasia' }, { name:'Yakarta', lat:-6.21, lon:106.85, utc:7, country:'Indonesia' },
-  { name:'Manila', lat:14.60, lon:120.98, utc:8, country:'Filipinas' }, { name:'Hanói', lat:21.03, lon:105.85, utc:7, country:'Vietnam' },
-  { name:'Nueva Delhi', lat:28.61, lon:77.21, utc:5.5, country:'India' }, { name:'Mumbai', lat:19.08, lon:72.88, utc:5.5, country:'India' },
-  { name:'Bengaluru', lat:12.97, lon:77.59, utc:5.5, country:'India' }, { name:'Karachi', lat:24.86, lon:67.01, utc:5, country:'Pakistán' },
-  { name:'Dhaka', lat:23.72, lon:90.41, utc:6, country:'Bangladesh' }, { name:'Yangón', lat:16.80, lon:96.16, utc:6.5, country:'Birmania' },
-  { name:'Colombo', lat:6.93, lon:79.85, utc:5.5, country:'Sri Lanka' }, { name:'Katmandú', lat:27.71, lon:85.31, utc:5.75, country:'Nepal' },
-  { name:'Riad', lat:24.69, lon:46.72, utc:3, country:'Arabia Saudita' }, { name:'Dubái', lat:25.20, lon:55.27, utc:4, country:'EAU' },
-  { name:'Doha', lat:25.29, lon:51.53, utc:3, country:'Qatar' }, { name:'Teherán', lat:35.69, lon:51.42, utc:3.5, country:'Irán' },
-  { name:'Tel Aviv', lat:32.08, lon:34.78, utc:2, country:'Israel' }, { name:'Ammán', lat:31.96, lon:35.95, utc:3, country:'Jordania' },
-  { name:'Taskent', lat:41.30, lon:69.27, utc:5, country:'Uzbekistán' }, { name:'Almaty', lat:43.25, lon:76.96, utc:6, country:'Kazajistán' },
-  { name:'Ulaanbaatar', lat:47.91, lon:106.92, utc:8, country:'Mongolia' }, { name:'Kabul', lat:34.53, lon:69.17, utc:4.5, country:'Afganistán' },
-  { name:'Sídney', lat:-33.87, lon:151.21, utc:10, country:'Australia' }, { name:'Melbourne', lat:-37.81, lon:144.96, utc:10, country:'Australia' },
-  { name:'Brisbane', lat:-27.47, lon:153.02, utc:10, country:'Australia' }, { name:'Perth', lat:-31.95, lon:115.86, utc:8, country:'Australia' },
-  { name:'Auckland', lat:-36.86, lon:174.77, utc:12, country:'Nueva Zelanda' }, { name:'Wellington', lat:-41.29, lon:174.78, utc:12, country:'Nueva Zelanda' },
-  { name:'Honolulu', lat:21.31, lon:-157.86, utc:-10, country:'EE.UU.' }, { name:'Suva', lat:-18.14, lon:178.44, utc:12, country:'Fiyi' },
-  { name:'Longyearbyen', lat:78.22, lon:15.65, utc:1, country:'Svalbard' }, { name:'Base McMurdo', lat:-77.85, lon:166.67, utc:12, country:'Antártida' }
+  { name:'Playa del Carmen', lat:20.6296, lon:-87.0739, utc:-5, country:'México' },
+  { name:'Pachuca', lat:20.1011, lon:-98.7591, utc:-6, country:'México' },
+  { name:'Nuevo Laredo', lat:27.4864, lon:-99.5075, utc:-6, country:'México' },
+  { name:'Mérida', lat:20.9674, lon:-89.5926, utc:-6, country:'México' },
+  { name:'Puebla', lat:19.0414, lon:-98.2063, utc:-6, country:'México' },
+  { name:'Veracruz', lat:19.1738, lon:-96.1342, utc:-6, country:'México' },
+  { name:'Acapulco', lat:16.8531, lon:-99.8237, utc:-6, country:'México' },
+  { name:'Oaxaca', lat:17.0732, lon:-96.7266, utc:-6, country:'México' },
+  { name:'San Cristóbal de las Casas', lat:16.7367, lon:-92.6376, utc:-6, country:'México' },
+  { name:'Tuxtla Gutiérrez', lat:16.7516, lon:-93.1167, utc:-6, country:'México' },
+  { name:'Tapachula', lat:14.9019, lon:-92.2575, utc:-6, country:'México' },
+  { name:'Villahermosa', lat:17.9895, lon:-92.9475, utc:-6, country:'México' },
+  { name:'Campeche', lat:19.8301, lon:-90.5349, utc:-6, country:'México' },
+  { name:'Chetumal', lat:18.5036, lon:-88.3057, utc:-5, country:'México' },
+  { name:'Tulum', lat:20.2114, lon:-87.4654, utc:-5, country:'México' },
+  { name:'Cozumel', lat:20.5108, lon:-86.9491, utc:-5, country:'México' },
+  { name:'Isla Mujeres', lat:21.2322, lon:-86.731, utc:-5, country:'México' },
+  { name:'Valladolid', lat:20.6896, lon:-88.2018, utc:-6, country:'México' },
+  { name:'Izamal', lat:20.9306, lon:-89.0172, utc:-6, country:'México' },
+  { name:'Chichén Itzá', lat:20.6843, lon:-88.5678, utc:-6, country:'México' },
+  { name:'Uxmal', lat:20.3606, lon:-89.7683, utc:-6, country:'México' },
+  { name:'Palenque', lat:17.5095, lon:-91.9825, utc:-6, country:'México' },
+  { name:'Comitán', lat:16.249, lon:-92.133, utc:-6, country:'México' },
+  { name:'San Luis Potosí', lat:22.1565, lon:-100.9855, utc:-6, country:'México' },
+  { name:'Aguascalientes', lat:21.8853, lon:-102.2916, utc:-6, country:'México' },
+  { name:'Zacatecas', lat:22.7709, lon:-102.5832, utc:-6, country:'México' },
+  { name:'Durango', lat:24.0277, lon:-104.6532, utc:-6, country:'México' },
+  { name:'Culiacán', lat:24.8091, lon:-107.394, utc:-7, country:'México' },
+  { name:'Los Mochis', lat:25.7905, lon:-108.9859, utc:-7, country:'México' },
+  { name:'Mazatlán', lat:23.2494, lon:-106.4111, utc:-7, country:'México' },
+  { name:'Puerto Vallarta', lat:20.6534, lon:-105.2253, utc:-6, country:'México' },
+  { name:'Tepic', lat:21.5042, lon:-104.8946, utc:-7, country:'México' },
+  { name:'Colima', lat:19.2433, lon:-103.7241, utc:-6, country:'México' },
+  { name:'Morelia', lat:19.7008, lon:-101.1844, utc:-6, country:'México' },
+  { name:'Querétaro', lat:20.5888, lon:-100.3899, utc:-6, country:'México' },
+  { name:'León', lat:21.1221, lon:-101.6826, utc:-6, country:'México' },
+  { name:'Irapuato', lat:20.6767, lon:-101.3563, utc:-6, country:'México' },
+  { name:'Salamanca', lat:20.5719, lon:-101.195, utc:-6, country:'México' },
+  { name:'Celaya', lat:20.5279, lon:-100.8129, utc:-6, country:'México' },
+  { name:'Guanajuato', lat:21.019, lon:-101.2574, utc:-6, country:'México' },
+  { name:'San Miguel de Allende', lat:20.9144, lon:-100.7436, utc:-6, country:'México' },
+  { name:'Toluca', lat:19.2826, lon:-99.6557, utc:-6, country:'México' },
+  { name:'Cuernavaca', lat:18.9242, lon:-99.2216, utc:-6, country:'México' },
+  { name:'Taxco', lat:18.5567, lon:-99.605, utc:-6, country:'México' },
+  { name:'Chilpancingo', lat:17.5515, lon:-99.5006, utc:-6, country:'México' },
+  { name:'Iguala', lat:18.3448, lon:-99.5397, utc:-6, country:'México' },
+  { name:'Tlaxcala', lat:19.3139, lon:-98.2404, utc:-6, country:'México' },
+  { name:'Hidalgo del Parral', lat:26.9329, lon:-105.6662, utc:-6, country:'México' },
+  { name:'Ciudad Juárez', lat:31.6904, lon:-106.4245, utc:-7, country:'México' },
+  { name:'Chihuahua', lat:28.6329, lon:-106.0691, utc:-6, country:'México' },
+  { name:'Hermosillo', lat:29.0729, lon:-110.9559, utc:-7, country:'México' },
+  { name:'Ciudad Obregón', lat:27.492, lon:-109.939, utc:-7, country:'México' },
+  { name:'Nogales', lat:31.3086, lon:-110.9422, utc:-7, country:'México' },
+  { name:'Guaymas', lat:27.9179, lon:-110.9083, utc:-7, country:'México' },
+  { name:'La Paz', lat:24.1426, lon:-110.3128, utc:-7, country:'México' },
+  { name:'Los Cabos', lat:22.8905, lon:-109.9167, utc:-7, country:'México' },
+  { name:'Ensenada', lat:31.8667, lon:-116.6, utc:-8, country:'México' },
+  { name:'Mexicali', lat:32.6245, lon:-115.4523, utc:-8, country:'México' },
+  { name:'Saltillo', lat:25.4383, lon:-100.9737, utc:-6, country:'México' },
+  { name:'Piedras Negras', lat:28.7, lon:-100.5235, utc:-6, country:'México' },
+  { name:'Reynosa', lat:26.0922, lon:-98.277, utc:-6, country:'México' },
+  { name:'Matamoros', lat:25.8797, lon:-97.5042, utc:-6, country:'México' },
+  { name:'Tampico', lat:22.2553, lon:-97.8686, utc:-6, country:'México' },
+  { name:'Poza Rica', lat:20.5332, lon:-97.4595, utc:-6, country:'México' },
+  { name:'Xalapa', lat:19.5438, lon:-96.9102, utc:-6, country:'México' },
+  { name:'Coatzacoalcos', lat:18.1345, lon:-94.4589, utc:-6, country:'México' },
+  { name:'Minatitlán', lat:17.9993, lon:-94.5569, utc:-6, country:'México' },
+  { name:'Manzanillo', lat:19.1138, lon:-104.3385, utc:-6, country:'México' },
+  { name:'Lázaro Cárdenas', lat:17.9583, lon:-102.1941, utc:-6, country:'México' },
+  { name:'Zihuatanejo', lat:17.6436, lon:-101.5511, utc:-6, country:'México' },
+  { name:'Ixtapa', lat:17.6678, lon:-101.6413, utc:-6, country:'México' },
+  { name:'Huatulco', lat:15.774, lon:-96.123, utc:-6, country:'México' },
+  { name:'Bahías de Huatulco', lat:15.775, lon:-96.123, utc:-6, country:'México' },
+  { name:'Salina Cruz', lat:16.1757, lon:-95.1972, utc:-6, country:'México' },
+  { name:'Juchitán', lat:16.436, lon:-95.02, utc:-6, country:'México' },
+  { name:'Tehuantepec', lat:16.3218, lon:-95.2414, utc:-6, country:'México' },
+  { name:'Tuxtepec', lat:18.0883, lon:-96.1255, utc:-6, country:'México' },
+  { name:'Puerto Escondido', lat:15.8592, lon:-97.0674, utc:-6, country:'México' },
+  { name:'Guatemala City', lat:14.6407, lon:-90.5133, utc:-6, country:'Guatemala' },
+  { name:'San Salvador', lat:13.6893, lon:-89.1872, utc:-6, country:'El Salvador' },
+  { name:'Tegucigalpa', lat:14.0818, lon:-87.2068, utc:-6, country:'Honduras' },
+  { name:'Managua', lat:12.1328, lon:-86.2504, utc:-6, country:'Nicaragua' },
+  { name:'San José (CR)', lat:9.9339, lon:-84.0849, utc:-6, country:'Costa Rica' },
+  { name:'Panamá City', lat:30.1595, lon:-85.6598, utc:-6, country:'United States' },
+  { name:'Belize City', lat:17.4995, lon:-88.1976, utc:-6, country:'Belize' },
+  { name:'San Pedro Sula', lat:15.5059, lon:-88.0259, utc:-6, country:'Honduras' },
+  { name:'León (Nicaragua)', lat:12.4353, lon:-86.8786, utc:-6, country:'Nicaragua' },
+  { name:'Granada (Nicaragua)', lat:11.9306, lon:-85.9537, utc:-6, country:'Nicaragua' },
+  { name:'Cobán', lat:15.4703, lon:-90.3745, utc:-6, country:'Guatemala' },
+  { name:'Antigua Guatemala', lat:14.5564, lon:-90.7332, utc:-6, country:'Guatemala' },
+  { name:'Flores', lat:-12.1133, lon:-77.0327, utc:-5, country:'Peru' },
+  { name:'David', lat:8.4273, lon:-82.4309, utc:-5, country:'Panama' },
+  { name:'Chiriquí', lat:8.4273, lon:-82.4308, utc:-5, country:'Panamá' },
+  { name:'Santo Domingo', lat:18.4719, lon:-69.8923, utc:-4, country:'Dominican Republic' },
+  { name:'San Juan (PR)', lat:18.4663, lon:-66.1057, utc:-4, country:'Puerto Rico' },
+  { name:'Port-au-Prince', lat:18.5435, lon:-72.3388, utc:-5, country:'Haiti' },
+  { name:'Nassau', lat:25.0582, lon:-77.3431, utc:-5, country:'Bahamas' },
+  { name:'Kingston (Jamaica)', lat:17.997, lon:-76.7936, utc:-5, country:'Jamaica' },
+  { name:'Bridgetown', lat:13.1073, lon:-59.6202, utc:-4, country:'Barbados' },
+  { name:'Port of Spain', lat:10.6667, lon:-61.5189, utc:-4, country:'Trinidad and Tobago' },
+  { name:'Fort-de-France', lat:14.6037, lon:-61.0742, utc:-4, country:'Martinique' },
+  { name:'Pointe-à-Pitre', lat:16.2364, lon:-61.5346, utc:-4, country:'Guadeloupe' },
+  { name:'George Town (Cayman)', lat:19.2866, lon:-81.3744, utc:-5, country:'Cayman Islands' },
+  { name:'Willemstad', lat:12.1225, lon:-68.8864, utc:-4, country:'Curacao' },
+  { name:'Paramaribo', lat:5.8664, lon:-55.1668, utc:-3, country:'Suriname' },
+  { name:'Georgetown (Guyana)', lat:6.8045, lon:-58.1553, utc:-4, country:'Guyana' },
+  { name:'Medellín', lat:6.245, lon:-75.5715, utc:-5, country:'Colombia' },
+  { name:'Cali', lat:3.4305, lon:-76.5199, utc:-5, country:'Colombia' },
+  { name:'Barranquilla', lat:10.9685, lon:-74.7813, utc:-5, country:'Colombia' },
+  { name:'Cartagena (CO)', lat:10.3982, lon:-75.4933, utc:-5, country:'Colombia' },
+  { name:'Maracaibo', lat:10.6423, lon:-71.6109, utc:-4, country:'Venezuela' },
+  { name:'Valencia (VE)', lat:10.1615, lon:-68.0004, utc:-4, country:'Venezuela' },
+  { name:'Ciudad Bolívar', lat:8.1237, lon:-63.5469, utc:-4, country:'Venezuela' },
+  { name:'Manaus', lat:-3.1019, lon:-60.025, utc:-4, country:'Brazil' },
+  { name:'Belém', lat:-1.4558, lon:-48.5044, utc:-3, country:'Brazil' },
+  { name:'Fortaleza', lat:-3.7172, lon:-38.5431, utc:-3, country:'Brazil' },
+  { name:'Recife', lat:-8.0539, lon:-34.8811, utc:-3, country:'Brazil' },
+  { name:'Salvador', lat:-12.9756, lon:-38.491, utc:-3, country:'Brazil' },
+  { name:'Curitiba', lat:-25.4278, lon:-49.2731, utc:-3, country:'Brazil' },
+  { name:'Porto Alegre', lat:-30.0328, lon:-51.2302, utc:-3, country:'Brazil' },
+  { name:'Belo Horizonte', lat:-19.9208, lon:-43.9378, utc:-3, country:'Brazil' },
+  { name:'Goiânia', lat:-16.6786, lon:-49.2539, utc:-3, country:'Brazil' },
+  { name:'Maceió', lat:-9.6658, lon:-35.7353, utc:-3, country:'Brazil' },
+  { name:'Natal', lat:-5.795, lon:-35.2094, utc:-3, country:'Brazil' },
+  { name:'João Pessoa', lat:-7.115, lon:-34.8631, utc:-3, country:'Brazil' },
+  { name:'Teresina', lat:-5.0892, lon:-42.8019, utc:-3, country:'Brazil' },
+  { name:'São Luís', lat:-2.5297, lon:-44.3028, utc:-3, country:'Brazil' },
+  { name:'Macapá', lat:0.0389, lon:-51.0664, utc:-3, country:'Brazil' },
+  { name:'Boa Vista', lat:2.8197, lon:-60.6733, utc:-4, country:'Brazil' },
+  { name:'Porto Velho', lat:-8.7619, lon:-63.9039, utc:-4, country:'Brazil' },
+  { name:'Cuiabá', lat:-15.5961, lon:-56.0967, utc:-4, country:'Brazil' },
+  { name:'Campo Grande', lat:-20.4428, lon:-54.6464, utc:-4, country:'Brazil' },
+  { name:'Florianópolis', lat:-27.5967, lon:-48.5492, utc:-3, country:'Brazil' },
+  { name:'Vitória', lat:-20.3194, lon:-40.3378, utc:-3, country:'Brazil' },
+  { name:'Ribeirão Preto', lat:-21.1775, lon:-47.8103, utc:-3, country:'Brazil' },
+  { name:'Campinas', lat:-22.9056, lon:-47.0608, utc:-3, country:'Brazil' },
+  { name:'Santos', lat:6.1128, lon:125.1717, utc:8, country:'Philippines' },
+  { name:'La Paz (Bolivia)', lat:-16.5, lon:-68.15, utc:-4, country:'Bolivia' },
+  { name:'Cochabamba', lat:-17.3819, lon:-66.1599, utc:-4, country:'Bolivia' },
+  { name:'Santa Cruz (Bolivia)', lat:-17.7863, lon:-63.1812, utc:-4, country:'Bolivia' },
+  { name:'Potosí', lat:22.1523, lon:-100.9714, utc:-6, country:'Mexico' },
+  { name:'Sucre', lat:-19.0333, lon:-65.2627, utc:-4, country:'Bolivia' },
+  { name:'Arequipa', lat:-16.399, lon:-71.5375, utc:-5, country:'Peru' },
+  { name:'Cusco', lat:-13.5319, lon:-71.967, utc:-5, country:'Peru' },
+  { name:'Trujillo', lat:-8.116, lon:-79.03, utc:-5, country:'Peru' },
+  { name:'Iquitos', lat:-3.7481, lon:-73.2529, utc:-5, country:'Peru' },
+  { name:'Pucallpa', lat:-8.3791, lon:-74.5539, utc:-5, country:'Peru' },
+  { name:'Iquique', lat:-20.2133, lon:-70.1503, utc:-3, country:'Chile' },
+  { name:'Antofagasta', lat:-23.6509, lon:-70.3975, utc:-3, country:'Chile' },
+  { name:'Concepción', lat:-36.827, lon:-73.0498, utc:-3, country:'Chile' },
+  { name:'Valparaíso', lat:-33.036, lon:-71.6296, utc:-3, country:'Chile' },
+  { name:'Viña del Mar', lat:-33.0246, lon:-71.5518, utc:-3, country:'Chile' },
+  { name:'Temuco', lat:-38.7363, lon:-72.5974, utc:-3, country:'Chile' },
+  { name:'Puerto Montt', lat:-41.4693, lon:-72.9424, utc:-3, country:'Chile' },
+  { name:'Punta Arenas', lat:-53.1628, lon:-70.9092, utc:-3, country:'Chile' },
+  { name:'Rosario', lat:-32.9468, lon:-60.6393, utc:-3, country:'Argentina' },
+  { name:'Córdoba (AR)', lat:-31.4065, lon:-64.1885, utc:-3, country:'Argentina' },
+  { name:'Mendoza', lat:-32.8895, lon:-68.8458, utc:-3, country:'Argentina' },
+  { name:'Tucumán', lat:-26.816, lon:-65.2105, utc:-3, country:'Argentina' },
+  { name:'Salta', lat:-24.8065, lon:-65.42, utc:-3, country:'Argentina' },
+  { name:'Jujuy', lat:-24.1928, lon:-65.2934, utc:-3, country:'Argentina' },
+  { name:'Bariloche', lat:-41.1456, lon:-71.3082, utc:-3, country:'Argentina' },
+  { name:'Ushuaia', lat:-54.8108, lon:-68.3159, utc:-3, country:'Argentina' },
+  { name:'Asunción (Paraguay)', lat:-25.2865, lon:-57.647, utc:-3, country:'Paraguay' },
+  { name:'Sevilla', lat:37.3828, lon:-5.9732, utc:1, country:'Spain' },
+  { name:'Valencia', lat:10.1615, lon:-68.0004, utc:-4, country:'Venezuela' },
+  { name:'Zaragoza', lat:41.6561, lon:-0.8773, utc:1, country:'Spain' },
+  { name:'Bilbao', lat:43.2627, lon:-2.9253, utc:1, country:'Spain' },
+  { name:'San Sebastián', lat:43.3128, lon:-1.975, utc:1, country:'Spain' },
+  { name:'Málaga', lat:36.7202, lon:-4.4203, utc:1, country:'Spain' },
+  { name:'Alicante', lat:38.3452, lon:-0.4815, utc:1, country:'Spain' },
+  { name:'Murcia', lat:37.987, lon:-1.13, utc:1, country:'Spain' },
+  { name:'Las Palmas', lat:28.0997, lon:-15.4134, utc:0, country:'Spain' },
+  { name:'Santa Cruz de Tenerife', lat:28.4682, lon:-16.2546, utc:0, country:'Spain' },
+  { name:'Córdoba (ES)', lat:37.8916, lon:-4.7728, utc:1, country:'Spain' },
+  { name:'Granada (ES)', lat:37.1882, lon:-3.6067, utc:1, country:'Spain' },
+  { name:'Cádiz', lat:10.9465, lon:123.288, utc:8, country:'Philippines' },
+  { name:'Santiago de Compostela', lat:42.8805, lon:-8.5457, utc:1, country:'Spain' },
+  { name:'A Coruña', lat:43.3713, lon:-8.396, utc:1, country:'Spain' },
+  { name:'Oviedo', lat:43.3603, lon:-5.8448, utc:1, country:'Spain' },
+  { name:'Santander', lat:43.4647, lon:-3.8044, utc:1, country:'Spain' },
+  { name:'Pamplona', lat:42.8169, lon:-1.6432, utc:1, country:'Spain' },
+  { name:'Logroño', lat:42.4667, lon:-2.45, utc:1, country:'Spain' },
+  { name:'Toledo', lat:41.6639, lon:-83.5552, utc:-5, country:'United States' },
+  { name:'Cuenca', lat:-2.8953, lon:-78.9963, utc:-5, country:'Ecuador' },
+  { name:'Lyon', lat:45.7485, lon:4.8467, utc:1, country:'France' },
+  { name:'Marseille', lat:43.297, lon:5.3811, utc:1, country:'France' },
+  { name:'Toulouse', lat:43.6043, lon:1.4437, utc:1, country:'France' },
+  { name:'Nice', lat:43.7031, lon:7.2661, utc:1, country:'France' },
+  { name:'Bordeaux', lat:44.8404, lon:-0.5805, utc:1, country:'France' },
+  { name:'Nantes', lat:47.2172, lon:-1.5534, utc:1, country:'France' },
+  { name:'Strasbourg', lat:48.5839, lon:7.7455, utc:1, country:'France' },
+  { name:'Rennes', lat:48.112, lon:-1.6743, utc:1, country:'France' },
+  { name:'Grenoble', lat:45.1787, lon:5.7148, utc:1, country:'France' },
+  { name:'Montpellier', lat:43.6109, lon:3.8763, utc:1, country:'France' },
+  { name:'Brest', lat:52.1089, lon:23.7175, utc:3, country:'Belarus' },
+  { name:'Dijon', lat:40.7834, lon:72.3507, utc:5, country:'Uzbekistan' },
+  { name:'Rouen', lat:49.4431, lon:1.0993, utc:1, country:'France' },
+  { name:'Tours', lat:47.3948, lon:0.704, utc:1, country:'France' },
+  { name:'Reims', lat:49.2653, lon:4.0285, utc:1, country:'France' },
+  { name:'Nápoles', lat:40.8518, lon:14.2681, utc:1, country:'Italia' },
+  { name:'Palermo', lat:38.1166, lon:13.3636, utc:1, country:'Italy' },
+  { name:'Venecia', lat:-18.7106, lon:-40.4006, utc:-3, country:'Brazil' },
+  { name:'Florencia', lat:1.6155, lon:-75.6041, utc:-5, country:'Colombia' },
+  { name:'Turín', lat:45.0703, lon:7.6869, utc:1, country:'Italia' },
+  { name:'Bari', lat:41.1207, lon:16.8698, utc:1, country:'Italy' },
+  { name:'Catania', lat:37.4922, lon:15.0704, utc:1, country:'Italy' },
+  { name:'Génova', lat:44.4056, lon:8.9463, utc:1, country:'Italia' },
+  { name:'Verona', lat:45.4385, lon:10.9938, utc:1, country:'Italy' },
+  { name:'Trieste', lat:45.6495, lon:13.7768, utc:1, country:'Italy' },
+  { name:'Padua', lat:-21.5394, lon:-42.1803, utc:-3, country:'Brazil' },
+  { name:'Cagliari', lat:39.2305, lon:9.1192, utc:1, country:'Italy' },
+  { name:'Frankfurt', lat:50.1155, lon:8.6842, utc:1, country:'Germany' },
+  { name:'Hamburgo', lat:53.5511, lon:9.9937, utc:1, country:'Alemania' },
+  { name:'Colonia', lat:50.9375, lon:6.9603, utc:1, country:'Alemania' },
+  { name:'Stuttgart', lat:48.7823, lon:9.177, utc:1, country:'Germany' },
+  { name:'Düsseldorf', lat:51.2217, lon:6.7762, utc:1, country:'Germany' },
+  { name:'Dortmund', lat:51.5149, lon:7.466, utc:1, country:'Germany' },
+  { name:'Essen', lat:51.4566, lon:7.0123, utc:1, country:'Germany' },
+  { name:'Bremen', lat:53.0758, lon:8.8072, utc:1, country:'Germany' },
+  { name:'Leipzig', lat:51.3396, lon:12.3713, utc:1, country:'Germany' },
+  { name:'Dresden', lat:51.0509, lon:13.7383, utc:1, country:'Germany' },
+  { name:'Hannover', lat:52.3705, lon:9.7332, utc:1, country:'Germany' },
+  { name:'Manchester', lat:53.4809, lon:-2.2374, utc:0, country:'United Kingdom' },
+  { name:'Birmingham', lat:52.4814, lon:-1.8998, utc:0, country:'United Kingdom' },
+  { name:'Glasgow', lat:55.8651, lon:-4.2576, utc:0, country:'United Kingdom' },
+  { name:'Liverpool', lat:53.4106, lon:-2.9779, utc:0, country:'United Kingdom' },
+  { name:'Leeds', lat:53.7965, lon:-1.5478, utc:0, country:'United Kingdom' },
+  { name:'Sheffield', lat:53.383, lon:-1.4659, utc:0, country:'United Kingdom' },
+  { name:'Edinburgh', lat:55.9521, lon:-3.1965, utc:0, country:'United Kingdom' },
+  { name:'Bristol', lat:51.4552, lon:-2.5966, utc:0, country:'United Kingdom' },
+  { name:'Cardiff', lat:51.48, lon:-3.18, utc:0, country:'United Kingdom' },
+  { name:'Belfast', lat:54.5968, lon:-5.9254, utc:0, country:'United Kingdom' },
+  { name:'Newcastle', lat:-32.9295, lon:151.7801, utc:11, country:'Australia' },
+  { name:'Nottingham', lat:52.9536, lon:-1.1505, utc:0, country:'United Kingdom' },
+  { name:'Southampton', lat:50.904, lon:-1.4043, utc:0, country:'United Kingdom' },
+  { name:'Chengdu', lat:30.6667, lon:104.0667, utc:8, country:'China' },
+  { name:'Guangzhou', lat:23.1167, lon:113.25, utc:8, country:'China' },
+  { name:'Shenzhen', lat:22.5455, lon:114.0683, utc:8, country:'China' },
+  { name:'Tianjin', lat:39.1422, lon:117.1767, utc:8, country:'China' },
+  { name:'Wuhan', lat:30.5833, lon:114.2667, utc:8, country:'China' },
+  { name:'Xi\'an', lat:34.2583, lon:108.9286, utc:8, country:'China' },
+  { name:'Chongqing', lat:29.5603, lon:106.5577, utc:8, country:'China' },
+  { name:'Harbin', lat:45.75, lon:126.65, utc:8, country:'China' },
+  { name:'Dalian', lat:38.9122, lon:121.6022, utc:8, country:'China' },
+  { name:'Qingdao', lat:36.0649, lon:120.3804, utc:8, country:'China' },
+  { name:'Nanjing', lat:32.0617, lon:118.7778, utc:8, country:'China' },
+  { name:'Hangzhou', lat:30.2936, lon:120.1614, utc:8, country:'China' },
+  { name:'Suzhou', lat:31.3041, lon:120.5954, utc:8, country:'China' },
+  { name:'Kunming', lat:25.0389, lon:102.7183, utc:8, country:'China' },
+  { name:'Urumqi', lat:43.801, lon:87.6005, utc:6, country:'China' },
+  { name:'Lhasa', lat:36.5024, lon:40.7477, utc:3, country:'Syria' },
+  { name:'Taipei', lat:25.0531, lon:121.5264, utc:8, country:'Taiwan' },
+  { name:'Taichung', lat:24.1469, lon:120.6839, utc:8, country:'Taiwan' },
+  { name:'Kaohsiung', lat:22.6163, lon:120.3133, utc:8, country:'Taiwan' },
+  { name:'Osaka', lat:34.6938, lon:135.5011, utc:9, country:'Japan' },
+  { name:'Kyoto', lat:35.0211, lon:135.7538, utc:9, country:'Japan' },
+  { name:'Sapporo', lat:43.0667, lon:141.35, utc:9, country:'Japan' },
+  { name:'Hiroshima', lat:34.4, lon:132.45, utc:9, country:'Japan' },
+  { name:'Nagoya', lat:35.1815, lon:136.9064, utc:9, country:'Japan' },
+  { name:'Fukuoka', lat:33.6, lon:130.4167, utc:9, country:'Japan' },
+  { name:'Busan', lat:35.1017, lon:129.03, utc:9, country:'South Korea' },
+  { name:'Incheon', lat:37.4565, lon:126.7052, utc:9, country:'South Korea' },
+  { name:'Daegu', lat:35.8703, lon:128.5911, utc:9, country:'South Korea' },
+  { name:'Gwangju', lat:35.1547, lon:126.9156, utc:9, country:'South Korea' },
+  { name:'Kathmandu', lat:27.7017, lon:85.3206, utc:5.75, country:'Nepal' },
+  { name:'Colombo', lat:6.9355, lon:79.8487, utc:5.5, country:'Sri Lanka' },
+  { name:'Rangún', lat:8.0171, lon:4.9042, utc:1, country:'Nigeria' },
+  { name:'Phnom Penh', lat:11.5625, lon:104.916, utc:7, country:'Cambodia' },
+  { name:'Vientiane', lat:17.9667, lon:102.6, utc:7, country:'Laos' },
+  { name:'Kuching', lat:1.55, lon:110.3333, utc:8, country:'Malaysia' },
+  { name:'Davao', lat:7.0731, lon:125.6128, utc:8, country:'Philippines' },
+  { name:'Surabaya', lat:-7.2492, lon:112.7508, utc:7, country:'Indonesia' },
+  { name:'Bandung', lat:-6.9222, lon:107.6069, utc:7, country:'Indonesia' },
+  { name:'Medan', lat:3.5833, lon:98.6667, utc:7, country:'Indonesia' },
+  { name:'Semarang', lat:-6.9931, lon:110.4208, utc:7, country:'Indonesia' },
+  { name:'Makassar', lat:-5.1486, lon:119.4319, utc:8, country:'Indonesia' },
+  { name:'Denpasar', lat:-8.65, lon:115.2167, utc:8, country:'Indonesia' },
+  { name:'Bali', lat:-8.4095, lon:115.1889, utc:8, country:'Indonesia' },
+  { name:'Medina', lat:5.6658, lon:-0.1631, utc:0, country:'Ghana' },
+  { name:'Jeddah', lat:21.4901, lon:39.1862, utc:3, country:'Saudi Arabia' },
+  { name:'Shiraz', lat:29.6103, lon:52.5311, utc:3.5, country:'Iran' },
+  { name:'Isfahan', lat:32.6525, lon:51.6746, utc:3.5, country:'Iran' },
+  { name:'Mashhad', lat:36.2981, lon:59.6057, utc:3.5, country:'Iran' },
+  { name:'Tabriz', lat:38.08, lon:46.2919, utc:3.5, country:'Iran' },
+  { name:'Ankara', lat:39.9199, lon:32.8543, utc:3, country:'Turkey' },
+  { name:'Izmir', lat:38.4127, lon:27.1384, utc:3, country:'Turkey' },
+  { name:'Bursa', lat:40.1956, lon:29.0601, utc:3, country:'Turkey' },
+  { name:'Antalya', lat:36.9081, lon:30.6956, utc:3, country:'Turkey' },
+  { name:'Adana', lat:36.9862, lon:35.3253, utc:3, country:'Turkey' },
+  { name:'Konya', lat:37.8713, lon:32.4846, utc:3, country:'Turkey' },
+  { name:'Haifa', lat:32.813, lon:34.9993, utc:2, country:'Israel' },
+  { name:'Erbil', lat:36.1912, lon:44.0094, utc:3, country:'Iraq' },
+  { name:'Basra', lat:30.5032, lon:47.8151, utc:3, country:'Iraq' },
+  { name:'Mosul', lat:36.335, lon:43.1189, utc:3, country:'Iraq' },
+  { name:'Aleppo', lat:36.2012, lon:37.1612, utc:3, country:'Syria' },
+  { name:'Damasco', lat:33.5138, lon:36.2765, utc:3, country:'Siria' },
+  { name:'Esmirna', lat:38.4237, lon:27.1428, utc:3, country:'Turquía' },
+  { name:'Muscat', lat:23.5841, lon:58.4078, utc:4, country:'Oman' },
+  { name:'Sana\'a', lat:15.3545, lon:44.2065, utc:3, country:'Yemen' },
+  { name:'Aden', lat:12.7794, lon:45.0367, utc:3, country:'Yemen' },
+  { name:'Manama', lat:26.2279, lon:50.5857, utc:3, country:'Bahrain' },
+  { name:'Kuwait City', lat:29.367, lon:47.9743, utc:3, country:'Kuwait' },
+  { name:'Novosibirsk', lat:55.0344, lon:82.9434, utc:7, country:'Russia' },
+  { name:'Yekaterinburg', lat:56.8519, lon:60.6122, utc:5, country:'Russia' },
+  { name:'Kazan', lat:55.7887, lon:49.1221, utc:3, country:'Russia' },
+  { name:'Samara', lat:53.2001, lon:50.15, utc:4, country:'Russia' },
+  { name:'Ufa', lat:54.7431, lon:55.9678, utc:5, country:'Russia' },
+  { name:'Perm', lat:58.0105, lon:56.2502, utc:5, country:'Russia' },
+  { name:'Krasnoyarsk', lat:56.0267, lon:92.9077, utc:7, country:'Russia' },
+  { name:'Irkutsk', lat:52.298, lon:104.2959, utc:8, country:'Russia' },
+  { name:'Vladivostok', lat:43.1056, lon:131.8735, utc:10, country:'Russia' },
+  { name:'Khabarovsk', lat:48.4803, lon:135.0882, utc:10, country:'Russia' },
+  { name:'Omsk', lat:54.9924, lon:73.3686, utc:6, country:'Russia' },
+  { name:'Volgograd', lat:48.7194, lon:44.5018, utc:3, country:'Russia' },
+  { name:'Rostov', lat:47.2313, lon:39.7233, utc:3, country:'Russia' },
+  { name:'Saratov', lat:51.5406, lon:46.0086, utc:4, country:'Russia' },
+  { name:'Voronezh', lat:51.672, lon:39.1843, utc:3, country:'Russia' },
+  { name:'Tbilisi', lat:41.6914, lon:44.8341, utc:4, country:'Georgia' },
+  { name:'Yerevan', lat:40.1776, lon:44.5126, utc:4, country:'Armenia' },
+  { name:'Baku', lat:40.3777, lon:49.892, utc:4, country:'Azerbaijan' },
+  { name:'Minsk', lat:53.9002, lon:27.5665, utc:3, country:'Belarus' },
+  { name:'Chisinau', lat:47.009, lon:28.8594, utc:2, country:'Moldova' },
+  { name:'Bishkek', lat:42.87, lon:74.59, utc:6, country:'Kyrgyzstan' },
+  { name:'Dushanbe', lat:38.5358, lon:68.779, utc:5, country:'Tajikistan' },
+  { name:'Ashgabat', lat:37.95, lon:58.3833, utc:5, country:'Turkmenistan' },
+  { name:'Astana (Nur-Sultan)', lat:51.1605, lon:71.4704, utc:5, country:'Kazajistán' },
+  { name:'Tashkent', lat:41.2647, lon:69.2163, utc:5, country:'Uzbekistan' },
+  { name:'Samarkand', lat:39.6546, lon:66.9644, utc:5, country:'Uzbekistan' },
+  { name:'Bukhara', lat:39.7703, lon:64.4307, utc:5, country:'Uzbekistan' },
+  { name:'Dakar', lat:14.6937, lon:-17.4441, utc:0, country:'Senegal' },
+  { name:'Abidján', lat:5.3544, lon:-4.0017, utc:0, country:'Ivory Coast' },
+  { name:'Bamako', lat:12.6091, lon:-7.9752, utc:0, country:'Mali' },
+  { name:'Ouagadougou', lat:12.3657, lon:-1.5339, utc:0, country:'Burkina Faso' },
+  { name:'Niamey', lat:13.5137, lon:2.1098, utc:1, country:'Niger' },
+  { name:'N\'Djamena', lat:12.1067, lon:15.0444, utc:1, country:'Chad' },
+  { name:'Bangui', lat:4.3612, lon:18.555, utc:1, country:'Central African Republic' },
+  { name:'Brazzaville', lat:-4.2661, lon:15.2832, utc:1, country:'Republic of the Congo' },
+  { name:'Kinshasa', lat:-4.3276, lon:15.3136, utc:1, country:'Democratic Republic of the Congo' },
+  { name:'Libreville', lat:0.3924, lon:9.4536, utc:1, country:'Gabon' },
+  { name:'Malabo', lat:14.6733, lon:120.9397, utc:8, country:'Philippines' },
+  { name:'Kampala', lat:0.3163, lon:32.5822, utc:3, country:'Uganda' },
+  { name:'Kigali', lat:-1.95, lon:30.0588, utc:2, country:'Rwanda' },
+  { name:'Bujumbura', lat:-3.3819, lon:29.3614, utc:2, country:'Burundi' },
+  { name:'Lusaka', lat:-15.4067, lon:28.2871, utc:2, country:'Zambia' },
+  { name:'Harare', lat:-17.8277, lon:31.0534, utc:2, country:'Zimbabwe' },
+  { name:'Maputo', lat:-25.9655, lon:32.5832, utc:2, country:'Mozambique' },
+  { name:'Antananarivo', lat:-18.9137, lon:47.5361, utc:3, country:'Madagascar' },
+  { name:'Moroni', lat:-11.7022, lon:43.2551, utc:3, country:'Comoros' },
+  { name:'Port Louis', lat:-20.1619, lon:57.4989, utc:4, country:'Mauritius' },
+  { name:'Windhoek', lat:-22.5594, lon:17.0832, utc:2, country:'Namibia' },
+  { name:'Gaborone', lat:-24.6545, lon:25.9086, utc:2, country:'Botswana' },
+  { name:'Maseru', lat:-29.3167, lon:27.4833, utc:2, country:'Lesotho' },
+  { name:'Mbabane', lat:-26.3167, lon:31.1333, utc:2, country:'Eswatini' },
+  { name:'Lilongwe', lat:-13.9669, lon:33.7873, utc:2, country:'Malawi' },
+  { name:'Blantyre', lat:-15.785, lon:35.0085, utc:2, country:'Malawi' },
+  { name:'Addis Abeba extra (Dire Dawa)', lat:9.5931, lon:41.8661, utc:3, country:'Etiopía' },
+  { name:'Djibouti', lat:11.589, lon:43.145, utc:3, country:'Djibouti' },
+  { name:'Asmara', lat:15.3381, lon:38.9318, utc:3, country:'Eritrea' },
+  { name:'Juba', lat:4.8517, lon:31.5825, utc:2, country:'South Sudan' },
+  { name:'Trípoli', lat:32.8872, lon:13.1913, utc:2, country:'Libia' },
+  { name:'Alejandría', lat:31.2001, lon:29.9187, utc:2, country:'Egipto' },
+  { name:'Aswan', lat:24.0908, lon:32.8994, utc:2, country:'Egypt' },
+  { name:'Luxor', lat:25.6989, lon:32.6421, utc:2, country:'Egypt' },
+  { name:'Casablanca', lat:33.5883, lon:-7.6114, utc:1, country:'Morocco' },
+  { name:'Tánger', lat:-6.1781, lon:106.63, utc:7, country:'Indonesia' },
+  { name:'Argel', lat:36.7538, lon:3.0588, utc:1, country:'Argelia' },
+  { name:'Túnez', lat:36.8065, lon:10.1815, utc:1, country:'Túnez' },
+  { name:'Sfax', lat:34.7406, lon:10.7603, utc:1, country:'Tunisia' },
+  { name:'Benghazi', lat:32.1149, lon:20.0686, utc:2, country:'Libya' },
+  { name:'Abuja', lat:9.0579, lon:7.4951, utc:1, country:'Nigeria' },
+  { name:'Kano', lat:12.0001, lon:8.5167, utc:1, country:'Nigeria' },
+  { name:'Ibadan', lat:7.3776, lon:3.9059, utc:1, country:'Nigeria' },
+  { name:'Port Harcourt', lat:4.7774, lon:7.0134, utc:1, country:'Nigeria' },
+  { name:'Enugu', lat:6.4413, lon:7.4988, utc:1, country:'Nigeria' },
+  { name:'Kaduna', lat:10.5264, lon:7.4388, utc:1, country:'Nigeria' },
+  { name:'Zaria', lat:11.1113, lon:7.7227, utc:1, country:'Nigeria' },
+  { name:'Lomé', lat:6.1287, lon:1.2215, utc:0, country:'Togo' },
+  { name:'Accra', lat:5.556, lon:-0.1969, utc:0, country:'Ghana' },
+  { name:'Kumasi', lat:6.6885, lon:-1.6244, utc:0, country:'Ghana' },
+  { name:'Monrovia', lat:6.3005, lon:-10.7969, utc:0, country:'Liberia' },
+  { name:'Freetown', lat:8.4871, lon:-13.2356, utc:0, country:'Sierra Leone' },
+  { name:'Conakry', lat:9.538, lon:-13.6773, utc:0, country:'Guinea' },
+  { name:'Bissau', lat:11.8636, lon:-15.5977, utc:0, country:'Guinea-Bissau' },
+  { name:'Banjul', lat:13.4527, lon:-16.578, utc:0, country:'Gambia' },
+  { name:'Nuakchot', lat:18.0735, lon:-15.9582, utc:0, country:'Mauritania' },
+  { name:'El Aaiún', lat:27.1536, lon:-13.2033, utc:0, country:'Sáhara Occidental' },
+  { name:'Praia', lat:-24.0058, lon:-46.4028, utc:-3, country:'Brazil' },
+  { name:'Adelaide', lat:-34.9287, lon:138.5986, utc:10.5, country:'Australia' },
+  { name:'Darwin', lat:-12.4611, lon:130.8418, utc:9.5, country:'Australia' },
+  { name:'Canberra', lat:-35.2835, lon:149.1281, utc:11, country:'Australia' },
+  { name:'Hobart', lat:-42.8794, lon:147.3294, utc:11, country:'Australia' },
+  { name:'Cairns', lat:-16.9237, lon:145.7661, utc:10, country:'Australia' },
+  { name:'Townsville', lat:-19.2664, lon:146.8057, utc:10, country:'Australia' },
+  { name:'Newcastle (AU)', lat:-32.9295, lon:151.7801, utc:11, country:'Australia' },
+  { name:'Wollongong', lat:-34.424, lon:150.8935, utc:11, country:'Australia' },
+  { name:'Gold Coast', lat:-28.0003, lon:153.4309, utc:10, country:'Australia' },
+  { name:'Sunshine Coast', lat:-26.6568, lon:153.0796, utc:10, country:'Australia' },
+  { name:'Launceston', lat:-41.4388, lon:147.1347, utc:11, country:'Australia' },
+  { name:'Christchurch', lat:-43.5333, lon:172.6333, utc:13, country:'New Zealand' },
+  { name:'Hamilton (NZ)', lat:-37.7833, lon:175.2833, utc:13, country:'New Zealand' },
+  { name:'Palmerston North', lat:-40.3564, lon:175.6111, utc:13, country:'New Zealand' },
+  { name:'Dunedin', lat:-45.8742, lon:170.5036, utc:13, country:'New Zealand' },
+  { name:'Queenstown (NZ)', lat:-31.8976, lon:26.8753, utc:2, country:'South Africa' },
+  { name:'Papeete', lat:-17.5347, lon:-149.5684, utc:-10, country:'French Polynesia' },
+  { name:'Noumea', lat:-22.2558, lon:166.4505, utc:11, country:'Nueva Caledonia' },
+  { name:'Port Moresby', lat:-9.4772, lon:147.1509, utc:10, country:'Papua New Guinea' },
+  { name:'Honiara', lat:-9.4333, lon:159.95, utc:11, country:'Solomon Islands' },
+  { name:'Port Vila', lat:-17.7365, lon:168.3137, utc:11, country:'Vanuatu' },
+  { name:'Nuku\'alofa', lat:-21.1368, lon:-175.2011, utc:13, country:'Tonga' },
+  { name:'Apia', lat:-13.8333, lon:-171.7667, utc:13, country:'Samoa' },
+  { name:'Funafuti', lat:-8.5243, lon:179.1942, utc:12, country:'Tuvalu' },
+  { name:'Tromsø', lat:69.6489, lon:18.9551, utc:1, country:'Norway' },
+  { name:'Murmansk', lat:68.974, lon:33.0975, utc:3, country:'Russia' },
+  { name:'Yakutsk', lat:62.0339, lon:129.7331, utc:9, country:'Russia' },
+  { name:'Fairbanks', lat:64.8378, lon:-147.7164, utc:-9, country:'United States' },
+  { name:'Barrow (Utqiagvik)', lat:71.2906, lon:-156.7886, utc:-9, country:'EE.UU.' },
+  { name:'Alert (Canadá)', lat:82.5018, lon:-62.3481, utc:-5, country:'Canadá' },
+  { name:'McMurdo (Antártida)', lat:-77.8419, lon:166.6863, utc:12, country:'Antártida' },
+  { name:'Ushuaia (extremo sur)', lat:-54.8019, lon:-68.303, utc:-3, country:'Argentina' },
+  { name:'Playa del Carmen', lat:20.6274, lon:-87.0799, utc:-5, country:'Mexico' },
+  { name:'Pachuca', lat:20.117, lon:-98.7333, utc:-6, country:'Mexico' },
+  { name:'Nuevo Laredo', lat:27.4763, lon:-99.5164, utc:-6, country:'Mexico' },
+  { name:'Mérida', lat:20.967, lon:-89.6232, utc:-6, country:'Mexico' },
+  { name:'Puebla', lat:19.0478, lon:-98.2072, utc:-6, country:'Mexico' },
+  { name:'Veracruz', lat:19.1809, lon:-96.1429, utc:-6, country:'Mexico' },
+  { name:'Acapulco', lat:16.8494, lon:-99.9089, utc:-6, country:'Mexico' },
+  { name:'Oaxaca', lat:17.0602, lon:-96.7254, utc:-6, country:'Mexico' },
+  { name:'San Cristóbal de las Casas', lat:7.7659, lon:-72.2358, utc:-4, country:'Venezuela' },
+  { name:'Tuxtla Gutiérrez', lat:16.7536, lon:-93.1158, utc:-6, country:'Mexico' },
+  { name:'Tapachula', lat:14.9054, lon:-92.2589, utc:-6, country:'Mexico' },
+  { name:'Villahermosa', lat:17.9862, lon:-92.9393, utc:-6, country:'Mexico' },
+  { name:'Campeche', lat:19.8407, lon:-90.5168, utc:-6, country:'Mexico' },
+  { name:'Chetumal', lat:18.5196, lon:-88.304, utc:-5, country:'Mexico' },
+  { name:'Tulum', lat:20.2117, lon:-87.4633, utc:-5, country:'Mexico' },
+  { name:'Cozumel', lat:20.5004, lon:-86.9427, utc:-5, country:'Mexico' },
+  { name:'Isla Mujeres', lat:18.0278, lon:-95.5295, utc:-6, country:'Mexico' },
+  { name:'Valladolid', lat:41.6552, lon:-4.7237, utc:1, country:'Spain' },
+  { name:'Comitán', lat:16.24, lon:-92.1367, utc:-6, country:'Mexico' },
+  { name:'San Luis Potosí', lat:22.1523, lon:-100.9714, utc:-6, country:'Mexico' },
+  { name:'Aguascalientes', lat:3.4305, lon:-76.5199, utc:-5, country:'Colombia' },
+  { name:'Zacatecas', lat:22.7684, lon:-102.5814, utc:-6, country:'Mexico' },
+  { name:'Durango', lat:24.0203, lon:-104.6576, utc:-6, country:'Mexico' },
+  { name:'Culiacán', lat:24.8021, lon:-107.3942, utc:-7, country:'Mexico' },
+  { name:'Los Mochis', lat:25.791, lon:-108.9982, utc:-7, country:'Mexico' },
+  { name:'Mazatlán', lat:23.2216, lon:-106.4189, utc:-7, country:'Mexico' },
+  { name:'Puerto Vallarta', lat:20.617, lon:-105.2302, utc:-6, country:'Mexico' },
+  { name:'Tepic', lat:21.5073, lon:-104.8933, utc:-7, country:'Mexico' },
+  { name:'Colima', lat:-12.0432, lon:-77.0282, utc:-5, country:'Peru' },
+  { name:'Morelia', lat:19.7008, lon:-101.1844, utc:-6, country:'Mexico' },
+  { name:'Querétaro', lat:20.5881, lon:-100.3881, utc:-6, country:'Mexico' },
+  { name:'León', lat:21.1291, lon:-101.6737, utc:-6, country:'Mexico' },
+  { name:'Irapuato', lat:20.6767, lon:-101.3563, utc:-6, country:'Mexico' },
+  { name:'Salamanca', lat:7.4125, lon:-7.5538, utc:0, country:'Ivory Coast' },
+  { name:'Celaya', lat:20.5235, lon:-100.8157, utc:-6, country:'Mexico' },
+  { name:'Guanajuato', lat:21.0186, lon:-101.2591, utc:-6, country:'Mexico' },
+  { name:'San Miguel de Allende', lat:13.4826, lon:-88.1821, utc:-6, country:'El Salvador' },
+  { name:'Toluca', lat:19.2879, lon:-99.6532, utc:-6, country:'Mexico' },
+  { name:'Cuernavaca', lat:18.9261, lon:-99.2308, utc:-6, country:'Mexico' },
+  { name:'Taxco', lat:18.5546, lon:-99.6059, utc:-6, country:'Mexico' },
+  { name:'Chilpancingo', lat:17.5523, lon:-99.5012, utc:-6, country:'Mexico' },
+  { name:'Iguala', lat:18.3454, lon:-99.5413, utc:-6, country:'Mexico' },
+  { name:'Tlaxcala', lat:19.3178, lon:-98.2385, utc:-6, country:'Mexico' },
+  { name:'Hidalgo del Parral', lat:26.9302, lon:-105.6664, utc:-6, country:'Mexico' },
+  { name:'Ciudad Juárez', lat:31.7202, lon:-106.4608, utc:-7, country:'Mexico' },
+  { name:'Chihuahua', lat:28.6353, lon:-106.0889, utc:-6, country:'Mexico' },
+  { name:'Hermosillo', lat:29.0887, lon:-110.9668, utc:-7, country:'Mexico' },
+  { name:'Ciudad Obregón', lat:27.4864, lon:-109.9408, utc:-7, country:'Mexico' },
+  { name:'Nogales', lat:31.3086, lon:-110.9422, utc:-7, country:'Mexico' },
+  { name:'Guaymas', lat:27.9199, lon:-110.8989, utc:-7, country:'Mexico' },
+  { name:'La Paz', lat:-16.5, lon:-68.15, utc:-4, country:'Bolivia' },
+  { name:'Ensenada', lat:31.8715, lon:-116.6007, utc:-8, country:'Mexico' },
+  { name:'Mexicali', lat:3.4305, lon:-76.5199, utc:-5, country:'Colombia' },
+  { name:'Saltillo', lat:25.426, lon:-100.9796, utc:-6, country:'Mexico' },
+  { name:'Piedras Negras', lat:28.7001, lon:-100.5235, utc:-6, country:'Mexico' },
+  { name:'Reynosa', lat:26.08, lon:-98.2846, utc:-6, country:'Mexico' },
+  { name:'Matamoros', lat:25.8797, lon:-97.5042, utc:-6, country:'Mexico' },
+  { name:'Tampico', lat:22.2852, lon:-97.8778, utc:-6, country:'Mexico' },
+  { name:'Poza Rica', lat:-14.0754, lon:-75.7342, utc:-5, country:'Peru' },
+  { name:'Xalapa', lat:19.5312, lon:-96.9159, utc:-6, country:'Mexico' },
+  { name:'Coatzacoalcos', lat:18.149, lon:-94.4447, utc:-6, country:'Mexico' },
+  { name:'Minatitlán', lat:18.0001, lon:-94.5569, utc:-6, country:'Mexico' },
+  { name:'Manzanillo', lat:7.4125, lon:-7.5538, utc:0, country:'Ivory Coast' },
+  { name:'Lázaro Cárdenas', lat:23.0366, lon:-81.206, utc:-5, country:'Cuba' },
+  { name:'Zihuatanejo', lat:17.6434, lon:-101.5521, utc:-6, country:'Mexico' },
+  { name:'Ixtapa', lat:19.3156, lon:-98.8828, utc:-6, country:'Mexico' },
+  { name:'Salina Cruz', lat:16.1754, lon:-95.1942, utc:-6, country:'Mexico' },
+  { name:'Juchitán', lat:52.0317, lon:113.5009, utc:9, country:'Russia' },
+  { name:'Tehuantepec', lat:6.5841, lon:3.9834, utc:1, country:'Nigeria' },
+  { name:'Tuxtepec', lat:18.0883, lon:-96.1253, utc:-6, country:'Mexico' },
+  { name:'Puerto Escondido', lat:33.1192, lon:-117.0864, utc:-8, country:'United States' },
+  { name:'San Salvador', lat:-12.9756, lon:-38.491, utc:-3, country:'Brazil' },
+  { name:'Panamá City', lat:8.9936, lon:-79.5197, utc:-5, country:'Panama' },
+  { name:'Antigua Guatemala', lat:5.6698, lon:-0.0166, utc:0, country:'Ghana' },
+  { name:'Bocas del Toro', lat:7.9647, lon:-11.7383, utc:0, country:'Sierra Leone' },
+  { name:'Port of Spain', lat:41.1496, lon:-8.611, utc:0, country:'Portugal' },
+  { name:'Pointe-à-Pitre', lat:35.8509, lon:139.52, utc:9, country:'Japan' },
+  { name:'Cuiabá', lat:5.1066, lon:7.3667, utc:1, country:'Nigeria' },
+  { name:'Cochabamba', lat:5.1066, lon:7.3667, utc:1, country:'Nigeria' },
+  { name:'Iquitos', lat:-0.2298, lon:-78.525, utc:-5, country:'Ecuador' },
+  { name:'Bariloche', lat:41.1207, lon:16.8698, utc:1, country:'Italy' },
+  { name:'Palma de Mallorca', lat:39.5694, lon:2.6502, utc:1, country:'Spain' },
+  { name:'Santiago de Compostela', lat:-33.4569, lon:-70.6483, utc:-3, country:'Chile' },
+  { name:'Grenoble', lat:39.5296, lon:-119.8138, utc:-8, country:'United States' },
+  { name:'Nápoles', lat:11.1697, lon:-1.145, utc:0, country:'Burkina Faso' },
+  { name:'Bolonia', lat:7.9647, lon:-11.7383, utc:0, country:'Sierra Leone' },
+  { name:'Turín', lat:45.0705, lon:7.6868, utc:1, country:'Italy' },
+  { name:'Bari', lat:8.6206, lon:-70.231, utc:-4, country:'Venezuela' },
+  { name:'Hamburgo', lat:53.5507, lon:9.993, utc:1, country:'Germany' },
+  { name:'Colonia', lat:19.3861, lon:-99.162, utc:-6, country:'Mexico' },
+  { name:'Nuremberg', lat:36.5717, lon:52.0153, utc:3.5, country:'Iran' },
+  { name:'Cebu', lat:10.3167, lon:123.8907, utc:8, country:'Philippines' },
+  { name:'Damasco', lat:35.1831, lon:136.7997, utc:9, country:'Japan' },
+  { name:'Manama', lat:7.4125, lon:-7.5538, utc:0, country:'Ivory Coast' },
+  { name:'Kuwait City', lat:10.0607, lon:-2.5019, utc:0, country:'Ghana' },
+  { name:'Nizhny Novgorod', lat:22.621, lon:73.1172, utc:5.5, country:'India' },
+  { name:'Khabarovsk', lat:5.1066, lon:7.3667, utc:1, country:'Nigeria' },
+  { name:'Ashgabat', lat:5.1066, lon:7.3667, utc:1, country:'Nigeria' },
+  { name:'Yaundé', lat:23.8875, lon:71.7698, utc:5.5, country:'India' },
+  { name:'Moroni', lat:-34.6512, lon:-58.6221, utc:-3, country:'Argentina' },
+  { name:'Mbabane', lat:5.1066, lon:7.3667, utc:1, country:'Nigeria' },
+  { name:'Mogadiscio', lat:30.8138, lon:75.1688, utc:5.5, country:'India' },
+  { name:'Trípoli', lat:32.8874, lon:13.1873, utc:2, country:'Libya' },
+  { name:'Alejandría', lat:41.2312, lon:16.298, utc:1, country:'Italy' },
+  { name:'Fez', lat:40.767, lon:29.7828, utc:3, country:'Turkey' },
+  { name:'Túnez', lat:23.8875, lon:71.7698, utc:5.5, country:'India' },
+  { name:'Cotonu', lat:11.4438, lon:-2.2255, utc:0, country:'Burkina Faso' },
+  { name:'Banjul', lat:39.6178, lon:125.6647, utc:9, country:'North Korea' },
+  { name:'Nuakchot', lat:6.6008, lon:0.4713, utc:0, country:'Ghana' },
+  { name:'El Aaiún', lat:23.8875, lon:71.7698, utc:5.5, country:'India' },
+  { name:'Queenstown (NZ)', lat:40.6815, lon:-73.8365, utc:-5, country:'United States' },
+  { name:'Noumea', lat:63.8284, lon:20.2597, utc:1, country:'Sweden' },
+  { name:'Honiara', lat:6.6008, lon:0.4713, utc:0, country:'Ghana' },
+  { name:'Apia', lat:-25.3552, lon:-57.4455, utc:-3, country:'Paraguay' },
+  { name:'Funafuti', lat:20.8232, lon:71.0379, utc:5.5, country:'India' },
+  { name:'Hammerfest', lat:34.0331, lon:-5.0003, utc:1, country:'Morocco' },
+  { name:'Nueva York', lat:40.71, lon:-74.01, utc:-5, country:'EE.UU.' },
+  { name:'Los Ángeles', lat:34.05, lon:-118.24, utc:-8, country:'EE.UU.' },
+  { name:'Chicago', lat:41.88, lon:-87.63, utc:-6, country:'EE.UU.' },
+  { name:'Miami', lat:25.77, lon:-80.19, utc:-5, country:'EE.UU.' },
+  { name:'Toronto', lat:43.65, lon:-79.38, utc:-5, country:'Canadá' },
+  { name:'Vancouver', lat:49.28, lon:-123.12, utc:-8, country:'Canadá' },
+  { name:'Ciudad de México', lat:19.43, lon:-99.13, utc:-6, country:'México' },
+  { name:'Cancún', lat:21.16, lon:-86.85, utc:-5, country:'México' },
+  { name:'Monterrey', lat:25.67, lon:-100.31, utc:-6, country:'México' },
+  { name:'Guadalajara', lat:20.66, lon:-103.35, utc:-6, country:'México' },
+  { name:'Tijuana', lat:32.53, lon:-117.04, utc:-8, country:'México' },
+  { name:'La Habana', lat:23.14, lon:-82.36, utc:-5, country:'Cuba' },
+  { name:'Bogotá', lat:4.71, lon:-74.07, utc:-5, country:'Colombia' },
+  { name:'Lima', lat:-12.05, lon:-77.04, utc:-5, country:'Perú' },
+  { name:'Santiago', lat:-33.45, lon:-70.67, utc:-3, country:'Chile' },
+  { name:'Buenos Aires', lat:-34.61, lon:-58.38, utc:-3, country:'Argentina' },
+  { name:'São Paulo', lat:-23.55, lon:-46.63, utc:-3, country:'Brasil' },
+  { name:'Río de Janeiro', lat:-22.91, lon:-43.17, utc:-3, country:'Brasil' },
+  { name:'Brasília', lat:-15.78, lon:-47.93, utc:-3, country:'Brasil' },
+  { name:'Caracas', lat:10.49, lon:-66.88, utc:-4, country:'Venezuela' },
+  { name:'Quito', lat:-0.22, lon:-78.51, utc:-5, country:'Ecuador' },
+  { name:'Asunción', lat:-25.29, lon:-57.65, utc:-4, country:'Paraguay' },
+  { name:'Montevideo', lat:-34.9, lon:-56.19, utc:-3, country:'Uruguay' },
+  { name:'Londres', lat:51.51, lon:-0.13, utc:0, country:'Reino Unido' },
+  { name:'París', lat:48.86, lon:2.35, utc:1, country:'Francia' },
+  { name:'Madrid', lat:40.42, lon:-3.7, utc:1, country:'España' },
+  { name:'Barcelona', lat:41.39, lon:2.17, utc:1, country:'España' },
+  { name:'Berlín', lat:52.52, lon:13.4, utc:1, country:'Alemania' },
+  { name:'Múnich', lat:48.14, lon:11.58, utc:1, country:'Alemania' },
+  { name:'Roma', lat:41.9, lon:12.5, utc:1, country:'Italia' },
+  { name:'Milán', lat:45.46, lon:9.19, utc:1, country:'Italia' },
+  { name:'Amsterdam', lat:52.37, lon:4.9, utc:1, country:'Países Bajos' },
+  { name:'Bruselas', lat:50.85, lon:4.35, utc:1, country:'Bélgica' },
+  { name:'Lisboa', lat:38.72, lon:-9.14, utc:0, country:'Portugal' },
+  { name:'Moscú', lat:55.75, lon:37.62, utc:3, country:'Rusia' },
+  { name:'Kiev', lat:50.45, lon:30.52, utc:2, country:'Ucrania' },
+  { name:'Estambul', lat:41.01, lon:28.96, utc:3, country:'Turquía' },
+  { name:'Atenas', lat:37.98, lon:23.73, utc:2, country:'Grecia' },
+  { name:'Viena', lat:48.21, lon:16.37, utc:1, country:'Austria' },
+  { name:'Zürich', lat:47.38, lon:8.54, utc:1, country:'Suiza' },
+  { name:'Estocolmo', lat:59.33, lon:18.07, utc:1, country:'Suecia' },
+  { name:'Helsinki', lat:60.17, lon:24.94, utc:2, country:'Finlandia' },
+  { name:'Dublín', lat:53.33, lon:-6.25, utc:0, country:'Irlanda' },
+  { name:'Reikiavik', lat:64.14, lon:-21.89, utc:0, country:'Islandia' },
+  { name:'El Cairo', lat:30.04, lon:31.24, utc:2, country:'Egipto' },
+  { name:'Lagos', lat:6.45, lon:3.4, utc:1, country:'Nigeria' },
+  { name:'Nairobi', lat:-1.29, lon:36.82, utc:3, country:'Kenia' },
+  { name:'Johannesburgo', lat:-26.2, lon:28.04, utc:2, country:'Sudáfrica' },
+  { name:'Casablanca', lat:33.59, lon:-7.62, utc:1, country:'Marruecos' },
+  { name:'Pekín', lat:39.91, lon:116.39, utc:8, country:'China' },
+  { name:'Shanghái', lat:31.23, lon:121.47, utc:8, country:'China' },
+  { name:'Hong Kong', lat:22.32, lon:114.17, utc:8, country:'China' },
+  { name:'Tokio', lat:35.69, lon:139.69, utc:9, country:'Japón' },
+  { name:'Osaka', lat:34.69, lon:135.5, utc:9, country:'Japón' },
+  { name:'Seúl', lat:37.57, lon:126.98, utc:9, country:'Corea del Sur' },
+  { name:'Bangkok', lat:13.75, lon:100.52, utc:7, country:'Tailandia' },
+  { name:'Singapur', lat:1.35, lon:103.82, utc:8, country:'Singapur' },
+  { name:'Kuala Lumpur', lat:3.14, lon:101.69, utc:8, country:'Malasia' },
+  { name:'Yakarta', lat:-6.21, lon:106.85, utc:7, country:'Indonesia' },
+  { name:'Manila', lat:14.6, lon:120.98, utc:8, country:'Filipinas' },
+  { name:'Hanói', lat:21.03, lon:105.85, utc:7, country:'Vietnam' },
+  { name:'Nueva Delhi', lat:28.61, lon:77.21, utc:5.5, country:'India' },
+  { name:'Mumbai', lat:19.08, lon:72.88, utc:5.5, country:'India' },
+  { name:'Bengaluru', lat:12.97, lon:77.59, utc:5.5, country:'India' },
+  { name:'Karachi', lat:24.86, lon:67.01, utc:5, country:'Pakistán' },
+  { name:'Dhaka', lat:23.72, lon:90.41, utc:6, country:'Bangladesh' },
+  { name:'Yangón', lat:16.8, lon:96.16, utc:6.5, country:'Birmania' },
+  { name:'Katmandú', lat:27.71, lon:85.31, utc:5.75, country:'Nepal' },
+  { name:'Riad', lat:24.69, lon:46.72, utc:3, country:'Arabia Saudita' },
+  { name:'Dubái', lat:25.2, lon:55.27, utc:4, country:'EAU' },
+  { name:'Doha', lat:25.29, lon:51.53, utc:3, country:'Qatar' },
+  { name:'Teherán', lat:35.69, lon:51.42, utc:3.5, country:'Irán' },
+  { name:'Tel Aviv', lat:32.08, lon:34.78, utc:2, country:'Israel' },
+  { name:'Ammán', lat:31.96, lon:35.95, utc:3, country:'Jordania' },
+  { name:'Taskent', lat:41.3, lon:69.27, utc:5, country:'Uzbekistán' },
+  { name:'Almaty', lat:43.25, lon:76.96, utc:6, country:'Kazajistán' },
+  { name:'Ulaanbaatar', lat:47.91, lon:106.92, utc:8, country:'Mongolia' },
+  { name:'Kabul', lat:34.53, lon:69.17, utc:4.5, country:'Afganistán' },
+  { name:'Sídney', lat:-33.87, lon:151.21, utc:10, country:'Australia' },
+  { name:'Melbourne', lat:-37.81, lon:144.96, utc:10, country:'Australia' },
+  { name:'Brisbane', lat:-27.47, lon:153.02, utc:10, country:'Australia' },
+  { name:'Perth', lat:-31.95, lon:115.86, utc:8, country:'Australia' },
+  { name:'Auckland', lat:-36.86, lon:174.77, utc:12, country:'Nueva Zelanda' },
+  { name:'Wellington', lat:-41.29, lon:174.78, utc:12, country:'Nueva Zelanda' },
+  { name:'Honolulu', lat:21.31, lon:-157.86, utc:-10, country:'EE.UU.' },
+  { name:'Suva', lat:-18.14, lon:178.44, utc:12, country:'Fiyi' },
+  { name:'Longyearbyen', lat:78.22, lon:15.65, utc:1, country:'Svalbard' },
+  { name:'Base McMurdo', lat:-77.85, lon:166.67, utc:12, country:'Antártida' },
+  { name:'Shanghai', lat:31.2222, lon:121.4581, utc:8, country:'China' }
 ];
 const EARTH_GRAVITY_REGIONS = [
   { id:'ecuador', name:'Ecuador (0°)', g:9.7803 },
@@ -1288,6 +1923,7 @@ let darkMode = true;
 let selectedUtcOffset = 0;
 let selectedMarsOffset = 0;
 let lunarMode = 'lst';
+let selectedEarthPoi = 0;
 let selectedMarsPoi = 0;
 let selectedLunarPoi = 0;
 let selectedEarthLat = 40.71;
@@ -1337,6 +1973,190 @@ let marsTime = new Date();
 let earthFrozen = false, moonFrozen = false, marsFrozen = false;
 let earthFrozenAt = null, moonFrozenAt = null, marsFrozenAt = null;
 const ampmModes = { earth:'24h', mars:'24h', darian:'24h', lst:'24h', ltc:'24h' };
+
+// ── AUDIO ENGINE ──────────────────────────────────────────────────────────
+let audioCtx = null;
+let hasAudioInteraction = false;
+function ensureAudioCtx() {
+  hasAudioInteraction = true;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+const TICK_TYPE_MAP = {
+  earth: 'earthy',
+  moonLST: 'moonLST',
+  moonFranklin: 'moonFranklin',
+  marsSilin: 'marsSilin',
+  marsDarian: 'marsDarian',
+};
+const TICK_DEFS = {
+  earth: [{ type: 'earthy', label: '⌚ Tierra' }],
+  moonLST: [{ type: 'moonLST', label: '🌙 NASA' }],
+  moonFranklin: [{ type: 'moonFranklin', label: '🌒 Franklin' }],
+  marsSilin: [{ type: 'marsSilin', label: '🔴 Silin' }],
+  marsDarian: [{ type: 'marsDarian', label: '🟥 Dariano' }],
+};
+const soundEnabled = {
+  earth: true,
+  moonLST: false,
+  moonFranklin: false,
+  marsSilin: false,
+  marsDarian: false,
+};
+let lastEarthSec = -1;
+let lastMoonLSTSec = -1;
+let lastMoonFranklinSec = -1;
+let lastMarsSilinSec = -1;
+let lastMarsDarianSec = -1;
+
+function playTick(type, when) {
+  if(!hasAudioInteraction) return;
+  const ctx = ensureAudioCtx();
+  const t = when || ctx.currentTime;
+  switch (type) {
+    case 'earthy': {
+      const bufLen = Math.floor(ctx.sampleRate * 0.04);
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.08));
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 1.8;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.22, t + 0.001); g.gain.exponentialRampToValueAtTime(0.001, t + 0.038);
+      src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+      src.start(t); src.stop(t + 0.05);
+      const osc = ctx.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(3800, t); osc.frequency.exponentialRampToValueAtTime(2400, t + 0.025);
+      const g2 = ctx.createGain();
+      g2.gain.setValueAtTime(0, t); g2.gain.linearRampToValueAtTime(0.09, t + 0.001); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      osc.connect(g2); g2.connect(ctx.destination); osc.start(t); osc.stop(t + 0.05);
+      break;
+    }
+    case 'moonLST': {
+      const osc = ctx.createOscillator(); osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2400, t); osc.frequency.exponentialRampToValueAtTime(1600, t + 0.06);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.13, t + 0.002); g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.12);
+      const nLen = Math.floor(ctx.sampleRate * 0.015);
+      const nBuf = ctx.createBuffer(1, nLen, ctx.sampleRate);
+      const d = nBuf.getChannelData(0);
+      for (let i = 0; i < nLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (nLen * 0.2));
+      const src = ctx.createBufferSource(); src.buffer = nBuf;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2800;
+      const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.07, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+      src.connect(lp); lp.connect(g2); g2.connect(ctx.destination); src.start(t); src.stop(t + 0.02);
+      break;
+    }
+    case 'moonFranklin': {
+      const osc = ctx.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(2800, t); osc.frequency.exponentialRampToValueAtTime(1800, t + 0.08);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.14, t + 0.002); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.22);
+      const nLen = Math.floor(ctx.sampleRate * 0.012);
+      const nBuf = ctx.createBuffer(1, nLen, ctx.sampleRate);
+      const d = nBuf.getChannelData(0);
+      for (let i = 0; i < nLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (nLen * 0.12));
+      const src = ctx.createBufferSource(); src.buffer = nBuf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 1.2;
+      const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.1, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.012);
+      src.connect(bp); bp.connect(g2); g2.connect(ctx.destination); src.start(t); src.stop(t + 0.015);
+      break;
+    }
+    case 'marsSilin': {
+      const osc = ctx.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, t); osc.frequency.exponentialRampToValueAtTime(110, t + 0.12);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.28, t + 0.003); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.22);
+      const nLen = Math.floor(ctx.sampleRate * 0.06);
+      const nBuf = ctx.createBuffer(1, nLen, ctx.sampleRate);
+      const d = nBuf.getChannelData(0);
+      for (let i = 0; i < nLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (nLen * 0.3));
+      const src = ctx.createBufferSource(); src.buffer = nBuf;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400; lp.Q.value = 0.7;
+      const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.18, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      src.connect(lp); lp.connect(g2); g2.connect(ctx.destination); src.start(t); src.stop(t + 0.07);
+      break;
+    }
+    case 'marsDarian': {
+      const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(420, t); osc.frequency.exponentialRampToValueAtTime(180, t + 0.10);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = 1.5;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.22, t + 0.003); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+      osc.connect(lp); lp.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.20);
+      const osc2 = ctx.createOscillator(); osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(85, t); osc2.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+      const g2 = ctx.createGain();
+      g2.gain.setValueAtTime(0, t); g2.gain.linearRampToValueAtTime(0.20, t + 0.003); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+      osc2.connect(g2); g2.connect(ctx.destination); osc2.start(t); osc2.stop(t + 0.18);
+      break;
+    }
+  }
+}
+function calcLSTSeconds(now){
+  return (now.getTime() - LST_EPOCH_MS) / 1000 / MILLILUNOUR_SEC;
+}
+function calcFranklinSeconds(now){
+  const franklinSecond = (LUNATION_SEC / 29) / 86400;
+  return (now.getTime() - LST_EPOCH_MS) / 1000 / franklinSecond;
+}
+function calcMTCSilinSeconds(now){
+  return getMSD(now) * 88775.244;
+}
+function calcMTCDarianSeconds(now){
+  return getMSD(now) * 88775.244;
+}
+function tickSounds() {
+  const now = new Date();
+  const eSec = now.getUTCSeconds();
+  if (eSec !== lastEarthSec) {
+    lastEarthSec = eSec;
+    if (soundEnabled.earth) playTick('earthy');
+  }
+  const lstSec = Math.floor(calcLSTSeconds(now));
+  if (lstSec !== lastMoonLSTSec) {
+    lastMoonLSTSec = lstSec;
+    if (soundEnabled.moonLST) playTick('moonLST');
+  }
+  const franklinSec = Math.floor(calcFranklinSeconds(now));
+  if (franklinSec !== lastMoonFranklinSec) {
+    lastMoonFranklinSec = franklinSec;
+    if (soundEnabled.moonFranklin) playTick('moonFranklin');
+  }
+  const silinSec = Math.floor(calcMTCSilinSeconds(now));
+  if (silinSec !== lastMarsSilinSec) {
+    lastMarsSilinSec = silinSec;
+    if (soundEnabled.marsSilin) playTick('marsSilin');
+  }
+  const darianSec = Math.floor(calcMTCDarianSeconds(now));
+  if (darianSec !== lastMarsDarianSec) {
+    lastMarsDarianSec = darianSec;
+    if (soundEnabled.marsDarian) playTick('marsDarian');
+  }
+}
+function initSoundBtns() {
+  Object.keys(soundEnabled).forEach(key => {
+    const btn = document.getElementById('snd-' + key);
+    if (!btn) return;
+    btn.textContent = soundEnabled[key] ? '🔊' : '🔇';
+    btn.classList.toggle('active', !!soundEnabled[key]);
+  });
+}
+function toggleSound(key) {
+  ensureAudioCtx();
+  if(!(key in soundEnabled)) return;
+  soundEnabled[key] = !soundEnabled[key];
+  const btn = document.getElementById('snd-' + key);
+  if (btn) {
+    btn.textContent = soundEnabled[key] ? '🔊' : '🔇';
+    btn.classList.toggle('active', !!soundEnabled[key]);
+  }
+  if (soundEnabled[key]) playTick(TICK_TYPE_MAP[key]);
+}
 
 function tickTimes() {
   if (syncMode) {
@@ -2778,9 +3598,10 @@ function setMarsMode(mode){
 }
 function renderPOISelector(p){
   if(p === 'earth'){
-    return `<div class="poi-meta">
-      <div>Observador activo: ${earthObserverLat.toFixed(2)}°, ${earthObserverLon.toFixed(2)}°</div>
-      <div>Zona actual: UTC${selectedUtcOffset>=0?'+':''}${selectedUtcOffset}</div>
+    return `<div style="display:grid;gap:.45rem">
+      <input class="city-search-input" placeholder="Buscar POI terrestre..." oninput="onEarthPoiSearch(this.value)" />
+      <select id="earth-poi-select-bottom" class="tz-select" onchange="onEarthPoiChange(this.value)"></select>
+      <div class="poi-card" id="earth-poi-card-bottom"></div>
     </div>`;
   }
   if(p === 'moon'){
@@ -2807,6 +3628,7 @@ function updatePOISection() {
       <div class="poi-block-body" id="poi-body-${p}">${renderPOISelector(p)}</div>
     </div>
   `).join('');
+  initEarthPoiSelect();
   initMarsPoiSelect();
   initLunarPoiSelect();
 }
@@ -2958,6 +3780,62 @@ function initMarsPoiSelect(){
     });
     sel.value = String(selectedMarsPoi);
   });
+}
+function initEarthPoiSelect(){
+  const sel = document.getElementById('earth-poi-select-bottom');
+  if(!sel) return;
+  sel.innerHTML = '';
+  EARTH_POIS.forEach((p, i) => {
+    const op = document.createElement('option');
+    op.value = String(i);
+    op.textContent = `${p.cat} ${p.name}`;
+    sel.appendChild(op);
+  });
+  sel.value = String(selectedEarthPoi);
+  renderEarthPoi();
+}
+function onEarthPoiChange(value){
+  selectedEarthPoi = Math.max(0, Math.min(EARTH_POIS.length - 1, Number(value) || 0));
+  const poi = EARTH_POIS[selectedEarthPoi];
+  if(!poi) return;
+  selectedEarthLat = poi.lat;
+  selectedEarthLon = poi.lon;
+  earthObserverLat = poi.lat;
+  earthObserverLon = poi.lon;
+  geoLat = null;
+  geoLon = null;
+  const sub = document.getElementById('hblock-earth-sub');
+  if(sub) sub.textContent = `${poi.name} · ${formatLat(poi.lat)} ${formatLon(poi.lon)}`;
+  const sel = document.getElementById('earth-poi-select-bottom');
+  if(sel) sel.value = String(selectedEarthPoi);
+  renderEarthPoi();
+}
+function onEarthPoiSearch(query){
+  const sel = document.getElementById('earth-poi-select-bottom');
+  if(!sel) return;
+  const q = normalizeSearchString((query || '').trim());
+  sel.innerHTML = '';
+  EARTH_POIS.forEach((p, i) => {
+    const hay = normalizeSearchString(`${p.name} ${p.desc}`);
+    if(!q || hay.includes(q)){
+      const op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = `${p.cat} ${p.name}`;
+      sel.appendChild(op);
+    }
+  });
+  if(sel.options.length) onEarthPoiChange(sel.options[0].value);
+}
+function renderEarthPoi(){
+  const card = document.getElementById('earth-poi-card-bottom');
+  const poi = EARTH_POIS[selectedEarthPoi] || EARTH_POIS[0];
+  if(!card || !poi) return;
+  card.innerHTML = `<h4>${poi.cat} ${poi.name}</h4><div class="poi-meta">
+    <div>${poi.desc}</div>
+    <div>Coord.: ${formatLat(poi.lat)} ${formatLon(poi.lon)}</div>
+    <div>Altitud/Profundidad: ${poi.elev>=0?'+':''}${poi.elev.toLocaleString('es-MX')} m</div>
+    <div>Categoría: ${poi.cat}</div>
+  </div>`;
 }
 function onMarsPoiChange(value){
   selectedMarsPoi = Math.max(0, Math.min(MARS_POIS.length-1, Number(value)||0));
@@ -3113,6 +3991,10 @@ function setLunarMode(mode){
   document.getElementById('lunar-lst-view').style.display = mode==='lst' ? 'contents' : 'none';
   document.getElementById('lunar-ltc-view').style.display = mode==='ltc' ? 'contents' : 'none';
   document.querySelector('#panel-lunar .badge').innerHTML = `<span class="dot"></span>Luna — ${mode==='lst'?'LST':'LTC'}`;
+  const franklinBtn = document.getElementById('snd-moonFranklin');
+  const nasaBtn = document.getElementById('snd-moonLST');
+  if(franklinBtn) franklinBtn.style.display = mode==='lst' ? '' : 'none';
+  if(nasaBtn) nasaBtn.style.display = mode==='ltc' ? '' : 'none';
 }
 
 async function refreshEarthTemperature(now){
@@ -3472,6 +4354,7 @@ function tick(){
   }
   updateSimDatetimeInput();
   updateFineInputs();
+  tickSounds();
 }
 
 /* ══════════════════════════════════════════════
@@ -3607,6 +4490,7 @@ document.addEventListener('click', function(e){
   closeDP();
 }, true);
 document.addEventListener('click', e => {
+  ensureAudioCtx();
   if (!e.target.closest('.city-search-wrap')) {
     const dd = document.getElementById('city-dropdown');
     if (dd) dd.style.display = 'none';
@@ -3632,6 +4516,7 @@ document.addEventListener('click', e => {
   ['horizon-earth','horizon-mars','horizon-moon'].forEach(resizeHorizonCanvas);
   setLunarMode('lst');
   updatePOISection();
+  initSoundBtns();
   eNavYear = now.getUTCFullYear(); eNavMonth = now.getUTCMonth()+1;
   const sil = silinFromTotalSols(solsFromEpoch(now));
   mNavYear = sil.year; mNavMonth = sil.month;
@@ -3643,7 +4528,7 @@ document.addEventListener('click', e => {
   setMarsMode('none');
   updateGridLayout();
   tick();
-  setInterval(tick, 1000);
+  setInterval(tick, 100);
 })();
 </script>
 </body>
