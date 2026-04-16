@@ -104,8 +104,8 @@ header p{color:var(--sub);font-size:.78rem;margin-top:.3rem}
 .clock-wrap{position:relative;width:190px;display:flex;flex-direction:column;align-items:center;z-index:1}
 canvas.clock-face{display:block;max-width:100%}
 .clock-digital{
-  position:static;margin-top:6px;
-  font-size:1rem;font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:.05em;white-space:nowrap
+  position:static;margin-top:8px;
+  font-size:1.9rem;font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.08em;white-space:nowrap
 }
 .earth .clock-digital{color:#7bb8ff}
 .mars .clock-digital{color:#ffaa70}
@@ -275,6 +275,29 @@ body.light .tz-select{background:#f0f2ff}
 }
 .aux-info strong{color:var(--text)}
 .aux-info .axis{font-size:.69rem}
+.astro-events{
+  width:100%;border-top:1px solid var(--border);padding-top:.55rem;display:grid;gap:.35rem;z-index:1
+}
+.astro-row{
+  display:grid;grid-template-columns:auto 1fr auto 1fr;gap:.4rem;align-items:center;font-size:.72rem;color:var(--sub)
+}
+.astro-label{font-size:.68rem;letter-spacing:.04em;text-transform:uppercase}
+.astro-val{font-variant-numeric:tabular-nums;color:var(--text);text-align:right}
+.gravity-section{
+  width:100%;font-size:.72rem;color:var(--sub);border:1px solid var(--border);border-radius:10px;
+  padding:.55rem .65rem;background:rgba(255,255,255,.03);z-index:1;display:grid;gap:.35rem
+}
+.gravity-label{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+.gravity-label select{
+  background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.22rem .45rem;
+  font-size:.72rem;max-width:100%
+}
+.gravity-val{font-variant-numeric:tabular-nums;color:var(--text)}
+.gravity-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.gravity-fill{height:100%;border-radius:999px;width:0%;transition:width .25s ease}
+.earth .gravity-fill{background:linear-gradient(90deg,#4ba1ff,var(--ea))}
+.mars .gravity-fill,.darian .gravity-fill{background:linear-gradient(90deg,#ff9a68,var(--ma))}
+.lunar .gravity-fill{background:linear-gradient(90deg,#00ddbb,var(--la))}
 .poi-card{
   border:1px solid var(--border);border-radius:12px;padding:.7rem;background:rgba(255,255,255,.03);
   font-size:.74rem;color:var(--sub);display:grid;gap:.3rem
@@ -381,6 +404,7 @@ body.light canvas.clock-face{background:transparent;}
 
   .clock-wrap{ width:160px; height:160px; }
   canvas.clock-face{ width:160px !important; height:160px !important; }
+  .clock-digital{ font-size:1.5rem; }
 
   .day-num{ font-size:2.3rem; }
   .month-year{ font-size:.85rem; }
@@ -396,7 +420,9 @@ body.light canvas.clock-face{background:transparent;}
 
   .mars-sec-ref, .lst-sec-ref{ font-size:.64rem; }
   .rovers-head{flex-direction:column;align-items:flex-start}
-  .aux-info,.poi-card{font-size:.7rem}
+  .aux-info,.poi-card,.gravity-section{font-size:.7rem}
+  .astro-row{font-size:.68rem;grid-template-columns:auto 1fr}
+  .astro-row .astro-label:nth-of-type(2){margin-left:.15rem}
 
   .dp-popover{ min-width:190px; padding:.6rem; }
   .dp-cell{ font-size:.66rem; padding:.28rem .06rem; }
@@ -473,12 +499,37 @@ body.light canvas.clock-face{background:transparent;}
     <div class="aux-info" id="earth-aux">
       <div>Estación: <strong id="earth-season">—</strong></div>
       <div class="axis">Eje: <strong id="earth-axis">23.44° respecto a la eclíptica</strong></div>
-      <div>🌡️ <strong id="earth-temp">—</strong></div>
+      <div>Temperatura: <strong id="earth-temp">—</strong></div>
     </div>
     <div class="info-row">
       <span>JDN: <strong id="earth-jdn">—</strong></span>
       <span>Día del año: <strong id="earth-doy">—</strong></span>
       <span>Sem ISO: <strong id="earth-week">—</strong></span>
+    </div>
+    <div class="astro-events">
+      <div class="astro-row">
+        <span class="astro-label">Amanecer</span>
+        <span class="astro-val" id="earth-sunrise">--:--</span>
+        <span class="astro-label">Atardecer</span>
+        <span class="astro-val" id="earth-sunset">--:--</span>
+      </div>
+      <div class="astro-row">
+        <span class="astro-label">Luna sale</span>
+        <span class="astro-val" id="earth-moonrise">--:--</span>
+        <span class="astro-label">Luna pone</span>
+        <span class="astro-val" id="earth-moonset">--:--</span>
+      </div>
+      <div class="astro-row">
+        <span class="astro-label">Fase lunar</span>
+        <span class="astro-val" id="earth-moonphase">--</span>
+      </div>
+    </div>
+    <div class="gravity-section">
+      <div class="gravity-label">Gravedad —
+        <select id="earth-grav-select" onchange="onGravityRegionChange('earth', this.value)"></select>
+      </div>
+      <div class="gravity-val" id="earth-grav-val">—</div>
+      <div class="gravity-bar"><div class="gravity-fill" id="earth-grav-fill"></div></div>
     </div>
   </div>
 
@@ -502,14 +553,14 @@ body.light canvas.clock-face{background:transparent;}
         <div class="clock-digital" id="digital-lst">00:00.0</div>
       </div>
       <div class="lst-sec-ref">
-        <div class="sec-ref-label">1 Millilunour = <strong id="lst-ml-val">3.54367</strong> s♁ · <span id="lst-pct">+254.37%</span> más lento</div>
+        <div class="sec-ref-label">1 Millilunour = <strong id="lst-ml-val">3.54367</strong> s Tierra · <span id="lst-pct">+254.37%</span> más lento</div>
         <div class="sec-ref-track-wrap">
-          <span class="sec-ref-sym">s♁</span>
+          <span class="sec-ref-sym">Tierra</span>
           <div class="sec-ref-track">
             <div class="lst-ref-earth-fill"></div>
             <div class="lst-ref-lunar-fill"></div>
           </div>
-          <span class="sec-ref-sym">☽</span>
+          <span class="sec-ref-sym">Luna</span>
         </div>
       </div>
       <div class="date-block">
@@ -560,13 +611,20 @@ body.light canvas.clock-face{background:transparent;}
         <span>Referencia: <strong id="ltc-ref">J2000</strong></span>
       </div>
     </div>
-    <div class="aux-info">
-      <div>Estación: <strong id="lunar-season">Sin estaciones (eje ~1.54°)</strong></div>
-      <div class="axis">Eje: <strong id="lunar-axis">1.54° respecto a la eclíptica</strong></div>
-      <div>Hora solar local: <strong id="lunar-poi-time">—</strong></div>
-      <div>Estado: <strong id="lunar-poi-light">—</strong></div>
-      <div>🌡️ <strong id="lunar-poi-temp">—</strong></div>
-      <div>📍 <strong id="lunar-poi-coords">—</strong></div>
+      <div class="aux-info">
+        <div>Estación: <strong id="lunar-season">Sin estaciones (eje ~1.54°)</strong></div>
+        <div class="axis">Eje: <strong id="lunar-axis">1.54° respecto a la eclíptica</strong></div>
+        <div>Hora solar local: <strong id="lunar-poi-time">—</strong></div>
+        <div>Estado: <strong id="lunar-poi-light">—</strong></div>
+        <div>Temperatura: <strong id="lunar-poi-temp">—</strong></div>
+        <div>Coord.: <strong id="lunar-poi-coords">—</strong></div>
+    </div>
+    <div class="gravity-section">
+      <div class="gravity-label">Gravedad —
+        <select id="lunar-grav-select" onchange="onGravityRegionChange('lunar', this.value)"></select>
+      </div>
+      <div class="gravity-val" id="lunar-grav-val">—</div>
+      <div class="gravity-bar"><div class="gravity-fill" id="lunar-grav-fill"></div></div>
     </div>
   </div>
 
@@ -585,14 +643,14 @@ body.light canvas.clock-face{background:transparent;}
       <div class="clock-digital" id="digital-mars">00:00:00</div>
     </div>
     <div class="mars-sec-ref">
-      <div class="sec-ref-label">1 s<strong>♁</strong> = 1.02749125 s♂ · +2.749% más lento</div>
+      <div class="sec-ref-label">1 s Tierra = 1.02749125 s Marte · +2.749% más lento</div>
       <div class="sec-ref-track-wrap">
-        <span class="sec-ref-sym">♁</span>
+        <span class="sec-ref-sym">Tierra</span>
         <div class="sec-ref-track">
           <div class="sec-ref-earth-fill"></div>
           <div class="sec-ref-mars-fill"></div>
         </div>
-        <span class="sec-ref-sym">♂</span>
+        <span class="sec-ref-sym">Marte</span>
       </div>
     </div>
     <div class="date-block">
@@ -619,12 +677,39 @@ body.light canvas.clock-face{background:transparent;}
     <div class="aux-info">
       <div>Estación: <strong id="mars-season">—</strong></div>
       <div class="axis">Eje: <strong id="mars-axis">25.19° respecto a la eclíptica</strong></div>
-      <div>🌡️ <strong id="mars-temp">—</strong></div>
+      <div>Temperatura: <strong id="mars-temp">—</strong></div>
     </div>
     <div class="info-row">
       <span>MSD: <strong id="mars-msd">—</strong></span>
       <span>Sol año: <strong id="mars-soy">—</strong></span>
       <span>MY: <strong id="mars-my">—</strong></span>
+    </div>
+    <div class="astro-events">
+      <div class="astro-row">
+        <span class="astro-label">Sol sale</span>
+        <span class="astro-val" id="mars-sunrise">--:-- MTC</span>
+        <span class="astro-label">Sol pone</span>
+        <span class="astro-val" id="mars-sunset">--:-- MTC</span>
+      </div>
+      <div class="astro-row">
+        <span class="astro-label">Fobos sale</span>
+        <span class="astro-val" id="mars-phobos-rise">--:-- MTC</span>
+        <span class="astro-label">Fobos pone</span>
+        <span class="astro-val" id="mars-phobos-set">--:-- MTC</span>
+      </div>
+      <div class="astro-row">
+        <span class="astro-label">Deimos sale</span>
+        <span class="astro-val" id="mars-deimos-rise">--:-- MTC</span>
+        <span class="astro-label">Deimos pone</span>
+        <span class="astro-val" id="mars-deimos-set">--:--</span>
+      </div>
+    </div>
+    <div class="gravity-section">
+      <div class="gravity-label">Gravedad —
+        <select id="mars-grav-select" onchange="onGravityRegionChange('mars', this.value)"></select>
+      </div>
+      <div class="gravity-val" id="mars-grav-val">—</div>
+      <div class="gravity-bar"><div class="gravity-fill" id="mars-grav-fill"></div></div>
     </div>
   </div>
 
@@ -643,14 +728,14 @@ body.light canvas.clock-face{background:transparent;}
       <div class="clock-digital" id="digital-darian">00:00:00</div>
     </div>
     <div class="mars-sec-ref">
-      <div class="sec-ref-label">1 s<strong>♁</strong> = 1.02749125 s♂ · +2.749% más lento</div>
+      <div class="sec-ref-label">1 s Tierra = 1.02749125 s Marte · +2.749% más lento</div>
       <div class="sec-ref-track-wrap">
-        <span class="sec-ref-sym">♁</span>
+        <span class="sec-ref-sym">Tierra</span>
         <div class="sec-ref-track">
           <div class="sec-ref-earth-fill"></div>
           <div class="sec-ref-mars-fill"></div>
         </div>
-        <span class="sec-ref-sym">♂</span>
+        <span class="sec-ref-sym">Marte</span>
       </div>
     </div>
     <div class="date-block">
@@ -677,12 +762,39 @@ body.light canvas.clock-face{background:transparent;}
     <div class="aux-info">
       <div>Estación: <strong id="darian-season">—</strong></div>
       <div class="axis">Eje: <strong id="darian-axis">25.19° respecto a la eclíptica</strong></div>
-      <div>🌡️ <strong id="darian-temp">—</strong></div>
+      <div>Temperatura: <strong id="darian-temp">—</strong></div>
     </div>
     <div class="info-row">
       <span>MSD: <strong id="darian-msd">—</strong></span>
       <span>Sol año: <strong id="darian-soy">—</strong></span>
       <span>Año D: <strong id="darian-yr">—</strong></span>
+    </div>
+    <div class="astro-events">
+      <div class="astro-row">
+        <span class="astro-label">Sol sale</span>
+        <span class="astro-val" id="darian-sunrise">--:-- MTC</span>
+        <span class="astro-label">Sol pone</span>
+        <span class="astro-val" id="darian-sunset">--:-- MTC</span>
+      </div>
+      <div class="astro-row">
+        <span class="astro-label">Fobos sale</span>
+        <span class="astro-val" id="darian-phobos-rise">--:-- MTC</span>
+        <span class="astro-label">Fobos pone</span>
+        <span class="astro-val" id="darian-phobos-set">--:-- MTC</span>
+      </div>
+      <div class="astro-row">
+        <span class="astro-label">Deimos sale</span>
+        <span class="astro-val" id="darian-deimos-rise">--:-- MTC</span>
+        <span class="astro-label">Deimos pone</span>
+        <span class="astro-val" id="darian-deimos-set">--:--</span>
+      </div>
+    </div>
+    <div class="gravity-section">
+      <div class="gravity-label">Gravedad —
+        <select id="darian-grav-select" onchange="onGravityRegionChange('darian', this.value)"></select>
+      </div>
+      <div class="gravity-val" id="darian-grav-val">—</div>
+      <div class="gravity-bar"><div class="gravity-fill" id="darian-grav-fill"></div></div>
     </div>
   </div>
 
@@ -699,7 +811,7 @@ body.light canvas.clock-face{background:transparent;}
 <section class="rovers-panel" id="panel-mars-pois" style="display:none">
   <div class="rovers-head">
     <div class="badge"><span class="dot"></span>Puntos de Interés — Marte</div>
-    <div class="badge-sub">Hora MTC local + UTC equivalente + coordenadas + temperatura estimada</div>
+    <div class="badge-sub">Hora MTC local + salida/puesta del Sol + coordenadas + temperatura estimada</div>
   </div>
   <div class="tz-bar">
     <span class="tz-label">POI:</span>
@@ -736,7 +848,7 @@ body.light canvas.clock-face{background:transparent;}
   Calendario Dariano (Gangale) · 24 meses (28/27 soles) · Bisiesto: 669 soles · Común: 668 soles ·
   Días Dariano: Sol Solis Sol Lunae Sol Martis Sol Mercurii Sol Jovis Sol Veneris Sol Saturni ·
   Luna: LST Franklin + LTC NASA (relativista) · Rovers: Perseverance, Curiosity, InSight, Opportunity, Spirit ·
-  Fuentes: Open-Meteo (Tierra en tiempo real; UTC fijo sin DST), modelos térmicos simplificados inspirados en NASA/JPL (Marte y Luna)
+  Fuentes: Sunrise-Sunset.org API · Open-Meteo API · modelos JPL/NASA
 </footer>
 
 <script>
@@ -787,11 +899,11 @@ const DAR_MONTHS_S = [
 const DAR_DAYS_FULL  = ['Sol Solis','Sol Lunae','Sol Martis','Sol Mercurii','Sol Jovis','Sol Veneris','Sol Saturni'];
 const DAR_DAYS_SHORT = ['Sol','Lun','Mar','Mer','Jov','Ven','Sat'];
 const ROVERS = [
-  { name:'Perseverance', icon:'🟢', status:'Activo', active:true, lat:18.4446, lon:77.4509, region:'Jezero Crater', landingUTC:Date.UTC(2021,1,18,0,0,0) },
-  { name:'Curiosity', icon:'🟢', status:'Activo', active:true, lat:-4.5895, lon:137.4417, region:'Gale Crater', landingUTC:Date.UTC(2012,7,6,0,0,0) },
-  { name:'InSight', icon:'⚫', status:'Inactivo (ref)', active:false, lat:4.5024, lon:135.6234, region:'Elysium Planitia', landingUTC:Date.UTC(2018,10,26,0,0,0) },
-  { name:'Opportunity', icon:'⚫', status:'Inactivo (ref)', active:false, lat:-1.9462, lon:354.4734, region:'Meridiani Planum', landingUTC:Date.UTC(2004,0,25,0,0,0) },
-  { name:'Spirit', icon:'⚫', status:'Inactivo (ref)', active:false, lat:-14.5684, lon:175.4729, region:'Gusev Crater', landingUTC:Date.UTC(2004,0,4,0,0,0) }
+  { name:'Perseverance', status:'Activo', active:true, lat:18.4446, lon:77.4509, region:'Jezero Crater', landingUTC:Date.UTC(2021,1,18,0,0,0) },
+  { name:'Curiosity', status:'Activo', active:true, lat:-4.5895, lon:137.4417, region:'Gale Crater', landingUTC:Date.UTC(2012,7,6,0,0,0) },
+  { name:'InSight', status:'Inactivo', active:false, lat:4.5024, lon:135.6234, region:'Elysium Planitia', landingUTC:Date.UTC(2018,10,26,0,0,0) },
+  { name:'Opportunity', status:'Inactivo', active:false, lat:-1.9462, lon:354.4734, region:'Meridiani Planum', landingUTC:Date.UTC(2004,0,25,0,0,0) },
+  { name:'Spirit', status:'Inactivo', active:false, lat:-14.5684, lon:175.4729, region:'Gusev Crater', landingUTC:Date.UTC(2004,0,4,0,0,0) }
 ];
 const MARS_POIS = [
   { name:'Olympus Mons', lat:18.65, lon:226.2, desc:'Volcán más alto del sistema solar' },
@@ -828,6 +940,35 @@ const EARTH_UTC_CITIES = [
   { offset:9, name:'Tokio', lat:35.69, lon:139.69, api:true },
   { offset:12, name:'Auckland', lat:-36.86, lon:174.76, api:true }
 ];
+const EARTH_GRAVITY_REGIONS = [
+  { id:'ecuador', name:'Ecuador (0°)', g:9.7803 },
+  { id:'cdmx', name:'Ciudad de México (19°N)', g:9.779 },
+  { id:'madrid', name:'Madrid (40°N)', g:9.8 },
+  { id:'londres', name:'Londres (51°N)', g:9.812 },
+  { id:'polo-norte', name:'Polo Norte (90°N)', g:9.8322 },
+  { id:'everest', name:'Monte Everest (cima)', g:9.764 },
+  { id:'marianas', name:'Fosa de las Marianas', g:9.8337 },
+  { id:'lapaz', name:'Ciudad de La Paz (Bolivia)', g:9.754 }
+];
+const MARS_GRAVITY_REGIONS = [
+  { id:'mars-ecuador', name:'Ecuador marciano', g:3.693 },
+  { id:'olympus', name:'Olympus Mons (cima)', g:3.68 },
+  { id:'hellas', name:'Hellas Planitia (fondo)', g:3.756 },
+  { id:'mars-polo-n', name:'Polo Norte marciano', g:3.758 },
+  { id:'mars-polo-s', name:'Polo Sur marciano', g:3.758 },
+  { id:'valles', name:'Valles Marineris', g:3.725 },
+  { id:'tharsis', name:'Tharsis Plateau', g:3.697 },
+  { id:'mars-promedio', name:'Promedio superficie', g:3.721 }
+];
+const LUNAR_GRAVITY_REGIONS = [
+  { id:'moon-ecuador', name:'Ecuador lunar', g:1.62 },
+  { id:'moon-polo-n', name:'Polo Norte lunar', g:1.625 },
+  { id:'moon-polo-s', name:'Polo Sur lunar', g:1.625 },
+  { id:'tranquillitatis', name:'Mare Tranquillitatis', g:1.622 },
+  { id:'tycho', name:'Cráter Tycho', g:1.618 },
+  { id:'moon-promedio', name:'Promedio superficie', g:1.622 },
+  { id:'shackleton', name:'Cráter Shackleton', g:1.624 }
+];
 
 /* ══════════════════════════════════════════════
    ESTADO
@@ -848,6 +989,16 @@ const EARTH_TEMP_CACHE_MS = 10 * 60 * 1000;
 const earthTempCache = new Map();
 const earthTempPending = new Set();
 let earthTempDisplay = 'calculando...';
+const EARTH_ASTRO_CACHE_MS = 60 * 60 * 1000;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_MTC_DAY = 24;
+const API_TIMEOUT_MS = 8000;
+const MAX_DISPLAY_GRAVITY = 9.8337;
+const earthAstroCache = new Map();
+let earthAstroDisplay = { sunrise:'N/D', sunset:'N/D', moonrise:'N/D', moonset:'N/D', moonphase:'N/D' };
+let selectedEarthGrav = EARTH_GRAVITY_REGIONS[2].id;
+let selectedMarsGrav = MARS_GRAVITY_REGIONS[7].id;
+let selectedLunarGrav = LUNAR_GRAVITY_REGIONS[5].id;
 
 /* ══════════════════════════════════════════════
    UTILIDADES GENERALES
@@ -904,21 +1055,21 @@ function getEarthSeason(utcDate, hemisphere){
   const m = utcDate.getUTCMonth() + 1;
   const d = utcDate.getUTCDate();
   const md = m * 100 + d;
-  let north = '❄️ Invierno';
-  if(md >= 320 && md < 621) north = '🌱 Primavera';
-  else if(md >= 621 && md < 922) north = '☀️ Verano';
-  else if(md >= 922 && md < 1221) north = '🍂 Otoño';
+  let north = 'Invierno';
+  if(md >= 320 && md < 621) north = 'Primavera';
+  else if(md >= 621 && md < 922) north = 'Verano';
+  else if(md >= 922 && md < 1221) north = 'Otoño';
   if(hemisphere === 'N') return north;
-  if(north === '🌱 Primavera') return '🍂 Otoño';
-  if(north === '☀️ Verano') return '❄️ Invierno';
-  if(north === '🍂 Otoño') return '🌱 Primavera';
-  return '☀️ Verano';
+  if(north === 'Primavera') return 'Otoño';
+  if(north === 'Verano') return 'Invierno';
+  if(north === 'Otoño') return 'Primavera';
+  return 'Verano';
 }
 function getMarsSeason(ls){
-  if(ls < 90) return { north:'🌱 Primavera', south:'🍂 Otoño' };
-  if(ls < 180) return { north:'☀️ Verano', south:'❄️ Invierno' };
-  if(ls < 270) return { north:'🍂 Otoño', south:'🌱 Primavera' };
-  return { north:'❄️ Invierno', south:'☀️ Verano' };
+  if(ls < 90) return { north:'Primavera', south:'Otoño' };
+  if(ls < 180) return { north:'Verano', south:'Invierno' };
+  if(ls < 270) return { north:'Otoño', south:'Primavera' };
+  return { north:'Invierno', south:'Verano' };
 }
 function estimateMarsTempC(ls, localHour){
   const lsRad = ls * Math.PI / 180;
@@ -950,10 +1101,82 @@ function getLunarLightAndTemp(date, poi){
   return { localH, isDay, isPole, temp };
 }
 function estimateEarthTempFallbackC(localHour, lat, northSeason){
-  const seasonBase = northSeason.startsWith('☀️') ? 18 : northSeason.startsWith('❄️') ? 4 : 12;
+  const seasonBase = northSeason.startsWith('Verano') ? 18 : northSeason.startsWith('Invierno') ? 4 : 12;
   const latPenalty = Math.abs(lat) * 0.22;
   const daySwing = 7 * Math.cos((localHour - 14) * Math.PI / 12);
   return seasonBase + daySwing - latPenalty;
+}
+function formatHHMM(hours){
+  const wrappedHours = wrap24(hours);
+  const hh = Math.floor(wrappedHours);
+  const mm = Math.floor((wrappedHours - hh) * MINUTES_PER_HOUR);
+  return `${pad(hh)}:${pad(mm)}`;
+}
+function formatHHMMSS(hours){
+  const t = mtcToHMS(wrap24(hours));
+  return `${pad(t.h)}:${pad(t.m)}:${pad(t.s)}`;
+}
+function phaseNameFromFraction(phase){
+  if(phase < 0.03 || phase >= 0.97) return 'Luna Nueva';
+  if(phase < 0.22) return 'Creciente';
+  if(phase < 0.28) return 'Cuarto Creciente';
+  if(phase < 0.47) return 'Gibosa Creciente';
+  if(phase < 0.53) return 'Luna Llena';
+  if(phase < 0.72) return 'Gibosa Menguante';
+  if(phase < 0.78) return 'Cuarto Menguante';
+  return 'Menguante';
+}
+function toLocalHHMM(isoText){
+  if(!isoText) return 'N/D';
+  const d = new Date(isoText);
+  if(Number.isNaN(d.getTime())) return 'N/D';
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function computeMoonRiseSetFromSun(phase, sunrise, sunset){
+  if(!sunrise || !sunset) return { moonrise:'N/D', moonset:'N/D' };
+  const sRise = new Date(sunrise);
+  const sSet = new Date(sunset);
+  if(Number.isNaN(sRise.getTime()) || Number.isNaN(sSet.getTime())) return { moonrise:'N/D', moonset:'N/D' };
+  const sunriseHours = sRise.getHours() + sRise.getMinutes()/60;
+  const moonriseHours = wrap24(sunriseHours + phase * 24);
+  const moonsetHours = wrap24(moonriseHours + 12);
+  return { moonrise: formatHHMM(moonriseHours), moonset: formatHHMM(moonsetHours) };
+}
+function getNextRiseSetHours(currentHour, periodHours){
+  const phase = ((currentHour % periodHours) + periodHours) % periodHours;
+  const riseIn = phase === 0 ? 0 : periodHours - phase;
+  const setIn = phase < periodHours / 2 ? (periodHours / 2 - phase) : (periodHours + periodHours / 2 - phase);
+  return { riseIn, setIn };
+}
+function getMarsReferenceOffset(){
+  const poi = MARS_POIS[selectedMarsPoi];
+  if(!poi) return 0;
+  return signedLongitude(poi.lon) / 15;
+}
+function renderMarsAstroEvents(now, panelPrefix){
+  const mtcH = getMTC(getMSD(now));
+  const offset = getMarsReferenceOffset();
+  const sunriseMtc = wrap24(6 - offset);
+  const sunsetMtc = wrap24(18 - offset);
+  const localMtc = wrap24(mtcH + offset);
+  const phobos = getNextRiseSetHours(localMtc, 0.31022 * 24);
+  const deimos = getNextRiseSetHours(localMtc, 1.22862 * 24);
+  document.getElementById(`${panelPrefix}-sunrise`).textContent = `${formatHHMM(sunriseMtc)} MTC`;
+  document.getElementById(`${panelPrefix}-sunset`).textContent = `${formatHHMM(sunsetMtc)} MTC`;
+  document.getElementById(`${panelPrefix}-phobos-rise`).textContent = `${formatHHMM(wrap24(mtcH + phobos.riseIn))} MTC`;
+  document.getElementById(`${panelPrefix}-phobos-set`).textContent = `${formatHHMM(wrap24(mtcH + phobos.setIn))} MTC`;
+  document.getElementById(`${panelPrefix}-deimos-rise`).textContent = `${formatHHMM(wrap24(mtcH + deimos.riseIn))} MTC`;
+  document.getElementById(`${panelPrefix}-deimos-set`).textContent =
+    deimos.setIn > HOURS_PER_MTC_DAY
+      ? `en ${(deimos.setIn / HOURS_PER_MTC_DAY).toFixed(1)} soles`
+      : `${formatHHMM(wrap24(mtcH + deimos.setIn))} MTC`;
+}
+function updateGravityDisplay(body, gValue){
+  const ratio = gValue / 9.80665;
+  const val = `${gValue.toFixed(4)} m/s² · ${ratio.toFixed(3)} gT`;
+  const fillPct = Math.max(0, Math.min(100, (gValue / MAX_DISPLAY_GRAVITY) * 100));
+  document.getElementById(`${body}-grav-val`).textContent = val;
+  document.getElementById(`${body}-grav-fill`).style.width = `${fillPct}%`;
 }
 function getEarthCityForOffset(offset){
   const exact = EARTH_UTC_CITIES.find(c => c.offset === offset);
@@ -1361,7 +1584,7 @@ function buildLSTCal(nLun, tLun, tLune, sel){
   html += '</tr></tbody>';
   document.getElementById('cal-lst-table').innerHTML = html;
   document.getElementById('lst-cal-title').textContent = 'Lunación ' + nLun;
-  document.getElementById('lst-cal-sub').textContent = `${LUNES_PER_LUNATION} lúnios · 1 lúnio = 23.625 h♁`;
+  document.getElementById('lst-cal-sub').textContent = `${LUNES_PER_LUNATION} lúnios · 1 lúnio = 23.625 h Tierra`;
   document.getElementById('lst-lun-prev').disabled = (nLun<=1);
   document.getElementById('lst-lune-prev').disabled = false;
   document.getElementById('lst-lune-next').disabled = false;
@@ -1664,6 +1887,38 @@ function initLunarPoiSelect(){
 function onLunarPoiChange(value){
   selectedLunarPoi = Math.max(0, Math.min(LUNAR_POIS.length-1, Number(value)||0));
 }
+function initGravitySelects(){
+  const bind = (id, items, selectedId) => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '';
+    items.forEach(item => {
+      const op = document.createElement('option');
+      op.value = item.id;
+      op.textContent = item.name;
+      sel.appendChild(op);
+    });
+    sel.value = selectedId;
+  };
+  bind('earth-grav-select', EARTH_GRAVITY_REGIONS, selectedEarthGrav);
+  bind('mars-grav-select', MARS_GRAVITY_REGIONS, selectedMarsGrav);
+  bind('darian-grav-select', MARS_GRAVITY_REGIONS, selectedMarsGrav);
+  bind('lunar-grav-select', LUNAR_GRAVITY_REGIONS, selectedLunarGrav);
+}
+function onGravityRegionChange(body, value){
+  if(body === 'earth'){
+    selectedEarthGrav = value;
+  } else if(body === 'mars' || body === 'darian'){
+    selectedMarsGrav = value;
+    const marsSel = document.getElementById('mars-grav-select');
+    const darSel = document.getElementById('darian-grav-select');
+    if(marsSel) marsSel.value = value;
+    if(darSel) darSel.value = value;
+  } else if(body === 'lunar'){
+    selectedLunarGrav = value;
+  }
+  tick();
+}
 
 function onMarsTzChange(value){
   selectedMarsOffset = value === 'utc' ? 'utc' : parseInt(value, 10);
@@ -1735,6 +1990,48 @@ async function refreshEarthTemperature(now){
   }
 }
 
+async function refreshEarthAstroEvents(now){
+  const city = getEarthCityForOffset(selectedUtcOffset);
+  const cacheKey = `${city.lat.toFixed(3)},${city.lon.toFixed(3)}:${now.toISOString().slice(0,10)}`;
+  const cached = earthAstroCache.get(cacheKey);
+  if(cached && (now.getTime() - cached.time < EARTH_ASTRO_CACHE_MS)){
+    earthAstroDisplay = cached.data;
+    return;
+  }
+  if(!isValidEarthCoordinate(city.lat, city.lon)){
+    earthAstroDisplay = { sunrise:'N/D', sunset:'N/D', moonrise:'N/D', moonset:'N/D', moonphase:'N/D' };
+    return;
+  }
+  try{
+    const lat = encodeURIComponent(String(city.lat));
+    const lng = encodeURIComponent(String(city.lon));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+    const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`, {
+      mode:'cors',
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
+    if(!res.ok) throw new Error(`sunrise-sunset status ${res.status}`);
+    const data = await res.json();
+    const r = data?.results;
+    if(!r?.sunrise || !r?.sunset) throw new Error('invalid payload');
+    const phase = getLunarPhaseFraction(now);
+    const moon = computeMoonRiseSetFromSun(phase, r.sunrise, r.sunset);
+    const nextData = {
+      sunrise: toLocalHHMM(r.sunrise),
+      sunset: toLocalHHMM(r.sunset),
+      moonrise: moon.moonrise,
+      moonset: moon.moonset,
+      moonphase: phaseNameFromFraction(phase)
+    };
+    earthAstroCache.set(cacheKey, { data: nextData, time: now.getTime() });
+    earthAstroDisplay = nextData;
+  } catch(error){
+    earthAstroDisplay = { sunrise:'N/D', sunset:'N/D', moonrise:'N/D', moonset:'N/D', moonphase:'N/D' };
+    console.warn('Sunrise-Sunset fallback:', error?.message || error);
+  }
+}
+
 /* ══════════════════════════════════════════════
    RENDER EARTH
 ══════════════════════════════════════════════ */
@@ -1756,7 +2053,15 @@ function renderEarth(now){
   document.getElementById('earth-season').textContent = `N: ${seasonN} · S: ${seasonS}`;
   document.getElementById('earth-axis').textContent = '23.44° respecto a la eclíptica (casi constante)';
   document.getElementById('earth-temp').textContent = earthTempDisplay;
+  document.getElementById('earth-sunrise').textContent = earthAstroDisplay.sunrise;
+  document.getElementById('earth-sunset').textContent = earthAstroDisplay.sunset;
+  document.getElementById('earth-moonrise').textContent = earthAstroDisplay.moonrise;
+  document.getElementById('earth-moonset').textContent = earthAstroDisplay.moonset;
+  document.getElementById('earth-moonphase').textContent = earthAstroDisplay.moonphase;
+  const earthGr = EARTH_GRAVITY_REGIONS.find(r => r.id === selectedEarthGrav) || EARTH_GRAVITY_REGIONS[0];
+  updateGravityDisplay('earth', earthGr.g);
   refreshEarthTemperature(now);
+  refreshEarthAstroEvents(now);
   document.getElementById('earth-now-btn').classList.toggle('away',!eNavLive);
   if(eNavLive){eNavYear=tY;eNavMonth=tM;}
   buildEarthCal(eNavYear,eNavMonth,tY,tM,tD,eSelDay);
@@ -1807,7 +2112,7 @@ function renderLTC(now){
   const ltcDate = new Date(now.getTime() + offsetMs);
   const h = ltcDate.getUTCHours(), m = ltcDate.getUTCMinutes(), s = ltcDate.getUTCSeconds();
   const isLight = document.body.classList.contains('light');
-  draw24hClock('canvas-ltc', h, m, s, isLight ? LST_LIGHT : LST_DARK);
+  drawClock('canvas-ltc', h, m, s, isLight ? LST_LIGHT : LST_DARK);
   document.getElementById('digital-ltc').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
   document.getElementById('ltc-date').textContent = `${pad(ltcDate.getUTCDate())}/${pad(ltcDate.getUTCMonth()+1)}/${ltcDate.getUTCFullYear()} UTC-LTC`;
   document.getElementById('ltc-offset').textContent = `${Math.round(offsetMs).toLocaleString('es-MX')} ms`;
@@ -1825,11 +2130,11 @@ function renderRovers(now){
     const stCls = r.active ? 'active' : 'inactive';
     return `<article class="rover-card">
       <div class="rover-title">
-        <span>${r.icon} ${r.name}</span>
+        <span>${r.name}</span>
         <span class="rover-status ${stCls}">${r.status}</span>
       </div>
       <div class="rover-meta">
-        <div class="rover-coords">📍 ${formatLat(r.lat)}&nbsp;&nbsp;${formatLon(r.lon)}</div>
+        <div class="rover-coords">Coord.: ${formatLat(r.lat)}&nbsp;&nbsp;${formatLon(r.lon)}</div>
         <div>${r.region}</div>
         <div>Sol misión: <strong>${missionSols}</strong></div>
         <div>MTC local: <strong>${pad(t.h)}:${pad(t.m)}:${pad(t.s)}</strong></div>
@@ -1848,18 +2153,20 @@ function renderMarsPoi(now){
   const offset = signedLongitude(poi.lon)/15;
   const localMtc = wrap24(mtcH + offset);
   const local = mtcToHMS(localMtc);
-  const utcEq = mtcToHMS(mtcToEarthUtcEquivalentHours(localMtc));
   const seasons = getMarsSeason(ls);
   const tempC = estimateMarsTempC(ls, localMtc);
+  const sunriseLocal = 6;
+  const sunsetLocal = 18;
   document.getElementById('mars-poi-card').innerHTML = `
     <h4>${poi.name}</h4>
     <div class="poi-meta">
-      <div>📍 ${formatLat(poi.lat)} ${formatLon(poi.lon)}</div>
+      <div>Coord.: ${formatLat(poi.lat)} ${formatLon(poi.lon)}</div>
       <div>${poi.desc}</div>
       <div>Hora MTC local: <strong>${pad(local.h)}:${pad(local.m)}:${pad(local.s)}</strong></div>
-      <div><strong>${formatOffsetHours(offset)}</strong> ≡ <strong>UTC ${pad(utcEq.h)}:${pad(utcEq.m)}:${pad(utcEq.s)}</strong></div>
+      <div>Sol sale local: <strong>${formatHHMM(sunriseLocal)} MTC</strong></div>
+      <div>Sol pone local: <strong>${formatHHMM(sunsetLocal)} MTC</strong></div>
       <div>Estación (Ls ${ls.toFixed(1)}°): <strong>N ${seasons.north} · S ${seasons.south}</strong></div>
-      <div>🌡️ <strong>${Math.round(tempC)}°C</strong> (estimado modelo físico)</div>
+      <div>Temperatura: <strong>${Math.round(tempC)}°C</strong> (estimado modelo físico)</div>
     </div>`;
 }
 
@@ -1872,6 +2179,8 @@ function renderLunarPoi(now){
   document.getElementById('lunar-poi-light').textContent = isPole ? 'Sombra permanente polar' : (isDay ? 'Día lunar' : 'Noche lunar');
   document.getElementById('lunar-poi-temp').textContent = `~${temp>0?'+':''}${temp}°C ${tempLabel}`;
   document.getElementById('lunar-poi-coords').textContent = `${poi.name} · ${formatLat(poi.lat)} ${formatLon(poi.lon)}`;
+  const lunarGr = LUNAR_GRAVITY_REGIONS.find(r => r.id === selectedLunarGrav) || LUNAR_GRAVITY_REGIONS[0];
+  updateGravityDisplay('lunar', lunarGr.g);
 }
 
 /* ══════════════════════════════════════════════
@@ -1894,6 +2203,9 @@ function renderMars(now){
   document.getElementById('mars-my').textContent   = silin.year;
   document.getElementById('mars-season').textContent = `N: ${season.north} · S: ${season.south} (Ls ${ls.toFixed(1)}°)`;
   document.getElementById('mars-temp').textContent = `${Math.round(tempC)}°C (estimado modelo físico)`;
+  const marsGr = MARS_GRAVITY_REGIONS.find(r => r.id === selectedMarsGrav) || MARS_GRAVITY_REGIONS[0];
+  updateGravityDisplay('mars', marsGr.g);
+  renderMarsAstroEvents(now, 'mars');
   document.getElementById('mars-now-btn').classList.toggle('away', !mNavLive);
   buildMarsCal(mNavYear, mNavMonth, silin.year, silin.month, silin.sol, mSelSol);
 }
@@ -1918,6 +2230,9 @@ function renderDar(now){
   document.getElementById('darian-yr').textContent  = dar.year;
   document.getElementById('darian-season').textContent = `N: ${season.north} · S: ${season.south} (Ls ${ls.toFixed(1)}°)`;
   document.getElementById('darian-temp').textContent = `${Math.round(tempC)}°C (estimado modelo físico)`;
+  const marsGr = MARS_GRAVITY_REGIONS.find(r => r.id === selectedMarsGrav) || MARS_GRAVITY_REGIONS[0];
+  updateGravityDisplay('darian', marsGr.g);
+  renderMarsAstroEvents(now, 'darian');
   document.getElementById('darian-now-btn').classList.toggle('away', !dNavLive);
   buildDarCal(dNavYear, dNavMonth, dar.year, dar.month, dar.sol, dSelSol);
 }
@@ -2098,6 +2413,7 @@ document.addEventListener('click', function(e){
   initMarsTzSelect();
   initMarsPoiSelect();
   initLunarPoiSelect();
+  initGravitySelects();
   onTzChange();
   onMarsTzChange('0');
   setLunarMode('lst');
