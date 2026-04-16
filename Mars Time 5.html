@@ -1718,18 +1718,18 @@ async function refreshEarthTemperature(now){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m&timezone=UTC`;
     const res = await fetch(url);
-    if(!res.ok) throw new Error(`open-meteo status ${res.status}`);
+    if(!res.ok) throw new Error(`open-meteo status ${res.status}: ${res.statusText || 'sin texto'}`);
     const data = await res.json();
     const tempC = Number(data?.current?.temperature_2m);
-    if(Number.isNaN(tempC)) throw new Error(`open-meteo payload inválido: ${JSON.stringify(data?.current ?? {})}`);
+    if(Number.isNaN(tempC)) throw new Error('open-meteo payload inválido (temperature_2m no numérica)');
     earthTempCache.set(key, { tempC, time: now.getTime() });
     const nearestHour = wrap24(now.getUTCHours() + city.offset + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600);
     const nearestFallback = estimateEarthTempFallbackC(nearestHour, city.lat, northSeason);
     const adjusted = exactCity ? tempC : (tempC + (fallbackC - nearestFallback));
     earthTempDisplay = `${Math.round(adjusted)}°C / ${Math.round(adjusted*9/5+32)}°F (en tiempo real, ${city.name})`;
-  } catch(_e){
+  } catch(error){
     earthTempDisplay = `${fallbackTxt} · fallback`;
-    console.warn('Temperatura Open-Meteo fallback:', _e?.message || _e);
+    console.warn('Temperatura Open-Meteo fallback:', error?.message || error);
   } finally {
     earthTempPending.delete(key);
   }
@@ -1867,9 +1867,10 @@ function renderLunarPoi(now){
   const poi = LUNAR_POIS[selectedLunarPoi] || LUNAR_POIS[0];
   const { localH, isDay, isPole, temp } = getLunarLightAndTemp(now, poi);
   const t = mtcToHMS(localH);
+  const tempLabel = isPole ? '(polo)' : (isDay ? '(día lunar)' : '(noche lunar)');
   document.getElementById('lunar-poi-time').textContent = `${pad(t.h)}:${pad(t.m)}:${pad(t.s)}`;
   document.getElementById('lunar-poi-light').textContent = isPole ? 'Sombra permanente polar' : (isDay ? 'Día lunar' : 'Noche lunar');
-  document.getElementById('lunar-poi-temp').textContent = `~${temp>0?'+':''}${temp}°C ${isPole?'(polo)':isDay?'(día lunar)':'(noche lunar)'}`;
+  document.getElementById('lunar-poi-temp').textContent = `~${temp>0?'+':''}${temp}°C ${tempLabel}`;
   document.getElementById('lunar-poi-coords').textContent = `${poi.name} · ${formatLat(poi.lat)} ${formatLon(poi.lon)}`;
 }
 
