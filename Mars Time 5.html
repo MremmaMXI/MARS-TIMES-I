@@ -448,9 +448,11 @@ body.light .tz-select{background:#f0f2ff}
 .dp-cell{
   padding:.38rem .1rem;border-radius:7px;text-align:center;font-size:.72rem;
   cursor:pointer;transition:background .12s;color:var(--sub);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:28px
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-height:28px /* evita colapso visual en la rejilla anual 4x3 */
 }
 .dp-cell:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.dp-cell-hidden{visibility:hidden;cursor:default}
 .dp-cell.dp-cur{font-weight:700}
 .dp-cell.dp-cur.dp-e{background:rgba(56,139,255,.22);color:var(--ea)}
 .dp-cell.dp-cur.dp-m{background:rgba(255,110,50,.22);color:var(--ma)}
@@ -576,6 +578,9 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   color:var(--la);font-size:.78rem;cursor:pointer;
 }
 .lun-picker-hint{font-size:.65rem;color:var(--sub);text-align:center}
+.lun-picker-close{
+  background:none;border:none;color:var(--sub);cursor:pointer;font-size:1rem;
+}
 </style>
 </head>
 <body>
@@ -755,15 +760,15 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
           <button class="nbtn" id="lst-lune-prev" onclick="lstNav('lune',-1)" title="Lúnio anterior">‹</button>
         </div>
         <div class="cal-nav-center">
-          <div class="cal-nav-title" id="lst-cal-title" onclick="openLunationPicker()" title="Click para seleccionar lunación">Lunación 1</div>
+          <div class="cal-nav-title" id="lst-cal-title" onclick="openLunationPicker()" onkeydown="onLunationTitleKeydown(event)" role="button" tabindex="0" title="Click para seleccionar lunación">Lunación 1</div>
           <div class="cal-nav-sub" id="lst-cal-sub"></div>
           <div class="lun-picker" id="lun-picker" style="display:none">
             <div class="lun-picker-header">
               <span>Ir a lunación</span>
-              <button onclick="closeLunationPicker()" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:1rem;">×</button>
+              <button class="lun-picker-close" aria-label="Cerrar selector de lunación" onclick="closeLunationPicker()">×</button>
             </div>
             <div class="lun-picker-body">
-              <input type="number" id="lun-jump-input" class="lun-jump-input" min="1" max="13316" placeholder="Núm. lunación" onkeydown="if(event.key==='Enter')applyLunationJump()" />
+              <input type="number" id="lun-jump-input" class="lun-jump-input" min="1" max="13316" placeholder="Núm. lunación" onkeydown="onLunJumpKeydown(event)" />
               <button class="lun-jump-btn" onclick="applyLunationJump()">Ir</button>
             </div>
             <div class="lun-picker-hint">Lunación 1 = 1 Jan 1900 · Máx: 13316</div>
@@ -1384,6 +1389,7 @@ function toggleAMPM(panel) {
 }
 function formatHour(h24, panel) {
   if (ampmModes[panel] === '24h') return String(h24).padStart(2, '0');
+  // 0->12 AM y 12->12 PM
   const h12 = h24 % 12 || 12;
   const ampm = h24 < 12 ? 'AM' : 'PM';
   return String(h12).padStart(2, '0') + ' ' + ampm;
@@ -1419,6 +1425,9 @@ function updateFineInputs() {
    UTILIDADES GENERALES
 ══════════════════════════════════════════════ */
 function pad(n, w=2){ return String(n).padStart(w,'0'); }
+function normalizeSearchString(str){
+  return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 
 function dateToJD(d){ return d.getTime()/86400000 + 2440587.5; }
 
@@ -2572,6 +2581,15 @@ function openLunationPicker() {
   if(!picker) return;
   picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
 }
+function onLunationTitleKeydown(event){
+  if(event.key === 'Enter' || event.key === ' '){
+    event.preventDefault();
+    openLunationPicker();
+  }
+}
+function onLunJumpKeydown(event){
+  if(event.key === 'Enter') applyLunationJump();
+}
 function closeLunationPicker() {
   const picker = document.getElementById('lun-picker');
   if(picker) picker.style.display = 'none';
@@ -2814,10 +2832,10 @@ let citySearchMatches = [];
 function onCitySearch(query) {
   const dd = document.getElementById('city-dropdown');
   if (!dd || !query || query.length < 2) { if(dd) dd.style.display = 'none'; return; }
-  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const q = normalizeSearchString(query);
   citySearchMatches = EARTH_CITIES.filter(c =>
-    c.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q) ||
-    c.country.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q)
+    normalizeSearchString(c.name).includes(q) ||
+    normalizeSearchString(c.country).includes(q)
   ).slice(0, 8);
   if (!citySearchMatches.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = citySearchMatches.map((c, i) =>
@@ -2956,10 +2974,10 @@ function onMarsPoiChange(value){
 function onMarsPoiSearch(query){
   const sel = document.getElementById('mars-poi-select-bottom');
   if(!sel) return;
-  const q = (query || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const q = normalizeSearchString((query || '').trim());
   sel.innerHTML = '';
   MARS_POIS.forEach((p, i) => {
-    const n = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const n = normalizeSearchString(p.name);
     if(!q || n.includes(q)){
       const op = document.createElement('option');
       op.value = String(i);
@@ -2998,10 +3016,10 @@ function onLunarPoiChange(value){
 function onMoonPoiSearch(query){
   const sel = document.getElementById('lunar-poi-select-bottom');
   if(!sel) return;
-  const q = (query || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const q = normalizeSearchString((query || '').trim());
   sel.innerHTML = '';
   LUNAR_POIS.forEach((p, i) => {
-    const n = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const n = normalizeSearchString(p.name);
     if(!q || n.includes(q)){
       const op = document.createElement('option');
       op.value = String(i);
@@ -3531,7 +3549,7 @@ function renderDP(){
     let html = '<div class="dp-grid dp-grid-yr">';
     for(let y=dpDecSt; y<dpDecSt+12; y++){
       if(y > maxY){
-        html += '<div class="dp-cell" style="visibility:hidden">-</div>';
+        html += '<div class="dp-cell dp-cell-hidden" aria-hidden="true"></div>';
         continue;
       }
       const isC = (y===dpYear);
