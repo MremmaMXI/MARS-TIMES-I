@@ -64,21 +64,26 @@ header p{color:var(--sub);font-size:.78rem;margin-top:.3rem}
 }
 .sim-dt-input:focus { border-color: var(--ea); }
 .fine-time-ctrl {
-  display: flex; align-items: center; gap: .2rem;
-  justify-content: center; z-index: 1;
+  display: flex; align-items: center; gap: .35rem;
+  justify-content: center; z-index: 1; flex-wrap: nowrap;
 }
 .fine-input {
-  width: 36px; padding: .2rem .3rem; text-align: center;
+  width: 48px; padding: .28rem .4rem; text-align: center;
   background: rgba(255,255,255,.06); color: var(--text);
-  border: 1px solid var(--border); border-radius: 6px;
-  font-size: .78rem; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: .85rem; font-variant-numeric: tabular-nums;
   outline: none;
+  -moz-appearance: textfield;
 }
+.fine-input::-webkit-inner-spin-button,
+.fine-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .fine-input:focus { border-color: var(--ea); }
 .mars .fine-input:focus { border-color: var(--ma); }
 .darian .fine-input:focus { border-color: var(--da); }
 .lunar .fine-input:focus { border-color: var(--la); }
-.fine-sep { color: var(--sub); font-size: .8rem; }
+.fine-sep { color: var(--sub); font-size: 1rem; font-weight: 700; padding: 0 .1rem; }
+.fine-col { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+.fine-lbl { font-size: .6rem; color: var(--sub); letter-spacing: .06em; }
 
 /* ── Grid ── */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.4rem;width:100%;max-width:1300px}
@@ -134,6 +139,17 @@ canvas.clock-face{display:block;max-width:100%}
 .mars .clock-digital{color:#ffaa70}
 .darian .clock-digital{color:#c084fc}
 .lunar .clock-digital{color:var(--la)}
+.ampm-toggle-wrap { display:flex; justify-content:center; z-index:1; }
+.ampm-btn{
+  padding:.2rem .6rem;border-radius:20px;border:1px solid var(--border);
+  background:rgba(255,255,255,.05);color:var(--sub);font-size:.68rem;font-weight:700;
+  cursor:pointer;letter-spacing:.06em;transition:all .2s;
+}
+.ampm-btn:hover{color:var(--text);border-color:rgba(255,255,255,.25)}
+.earth .ampm-btn:hover,.earth .ampm-btn.active{border-color:var(--ea);color:var(--ea)}
+.mars .ampm-btn:hover,.mars .ampm-btn.active{border-color:var(--ma);color:var(--ma)}
+.darian .ampm-btn:hover,.darian .ampm-btn.active{border-color:var(--da);color:var(--da)}
+.lunar .ampm-btn:hover,.lunar .ampm-btn.active{border-color:var(--la);color:var(--la)}
 .tz-bar{display:flex;align-items:center;gap:.5rem;width:100%;z-index:1}
 .tz-label{font-size:.72rem;color:var(--sub);white-space:nowrap;flex-shrink:0}
 .tz-select{flex:1;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.3rem .5rem;font-size:.78rem;cursor:pointer;outline:none;transition:border-color .2s}
@@ -148,6 +164,22 @@ body.light .tz-select{background:#f0f2ff}
 }
 .geo-btn:hover { color: var(--text); border-color: rgba(255,255,255,.25); }
 .geo-btn:disabled { opacity: .5; cursor: default; }
+.city-search-wrap{position:relative;width:100%;z-index:10}
+.city-search-input{
+  width:100%;padding:.32rem .6rem;background:var(--panel);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;font-size:.78rem;outline:none;transition:border-color .2s;
+}
+.city-search-input:focus{border-color:var(--ea)}
+.city-dropdown{
+  position:absolute;top:100%;left:0;right:0;background:#1c1c2e;border:1px solid rgba(255,255,255,.15);
+  border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:9999;display:none;overflow:hidden;margin-top:3px;
+}
+.city-item{
+  display:flex;justify-content:space-between;align-items:baseline;padding:.38rem .7rem;cursor:pointer;transition:background .12s;gap:.5rem;
+}
+.city-item:hover{background:rgba(255,255,255,.08)}
+.city-item-name{font-size:.78rem;color:var(--text)}
+.city-item-country{font-size:.68rem;color:var(--sub);white-space:nowrap}
 
 /* ── Mars seconds reference ── */
 .mars-sec-ref{
@@ -340,6 +372,17 @@ body.light .tz-select{background:#f0f2ff}
 }
 .poi-card h4{font-size:.86rem;color:var(--text)}
 .poi-meta{display:grid;gap:.18rem}
+.poi-block{
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+}
+.poi-block-header{padding:.6rem 1rem;border-bottom:1px solid var(--border)}
+.poi-block-title{
+  font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+.poi-block-earth .poi-block-title{color:var(--ea)}
+.poi-block-moon .poi-block-title{color:var(--la)}
+.poi-block-mars .poi-block-title{color:var(--ma)}
+.poi-block-body{padding:.8rem 1rem}
 .horizon-toggles{
   display:flex;align-items:center;gap:.45rem;justify-content:center;flex-wrap:wrap;
   width:100%;max-width:1300px
@@ -403,11 +446,13 @@ body.light .tz-select{background:#f0f2ff}
 .dp-grid-24{grid-template-columns:repeat(4,1fr)}
 .dp-grid-yr{grid-template-columns:repeat(4,1fr)}
 .dp-cell{
-  padding:.32rem .1rem;border-radius:7px;text-align:center;font-size:.7rem;
+  padding:.38rem .1rem;border-radius:7px;text-align:center;font-size:.72rem;
   cursor:pointer;transition:background .12s;color:var(--sub);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-height:28px /* evita colapso visual en la rejilla anual 4x3 */
 }
 .dp-cell:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.dp-cell-hidden{visibility:hidden;cursor:default}
 .dp-cell.dp-cur{font-weight:700}
 .dp-cell.dp-cur.dp-e{background:rgba(56,139,255,.22);color:var(--ea)}
 .dp-cell.dp-cur.dp-m{background:rgba(255,110,50,.22);color:var(--ma)}
@@ -438,6 +483,8 @@ body.light .cal-nav-title:hover{background:rgba(0,0,0,.06)}
 body.light .dp-year-lbl:hover,
 body.light .dp-cell:hover{background:rgba(0,0,0,.08)}
 body.light canvas.clock-face{background:transparent;}
+body.light .city-dropdown{background:#fff;border-color:rgba(0,0,0,.15)}
+body.light .city-item:hover{background:rgba(0,0,0,.06)}
 
 /* ═══════════════════════════════════════
    MOBILE RESPONSIVE
@@ -512,6 +559,28 @@ body.light canvas.clock-face{background:transparent;}
   outline:none;
 }
 .lun-direct-input:focus{border-color:var(--la)}
+.lun-picker{
+  position:absolute;z-index:999;background:#1c1c2e;border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;padding:.8rem;box-shadow:0 8px 24px rgba(0,0,0,.7);min-width:220px;
+}
+.lun-picker-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;
+  font-size:.78rem;font-weight:700;color:var(--la);
+}
+.lun-picker-body{display:flex;gap:.4rem;margin-bottom:.4rem}
+.lun-jump-input{
+  flex:1;padding:.3rem .5rem;background:rgba(255,255,255,.06);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;font-size:.8rem;outline:none;
+}
+.lun-jump-input:focus{border-color:var(--la)}
+.lun-jump-btn{
+  padding:.3rem .7rem;border-radius:8px;border:1px solid var(--la);background:rgba(0,200,170,.1);
+  color:var(--la);font-size:.78rem;cursor:pointer;
+}
+.lun-picker-hint{font-size:.65rem;color:var(--sub);text-align:center}
+.lun-picker-close{
+  background:none;border:none;color:var(--sub);cursor:pointer;font-size:1rem;
+}
 </style>
 </head>
 <body>
@@ -552,21 +621,30 @@ body.light canvas.clock-face{background:transparent;}
       <button class="now-btn" id="earth-now-btn" onclick="goEarthNow()">Hoy</button>
     </div>
     <div class="tz-bar">
-      <span class="tz-label">Zona:</span>
-      <select id="tz-select" class="tz-select" onchange="onTzChange()"></select>
+      <span class="tz-label">UTC:</span>
+      <select id="tz-select" class="tz-select" onchange="onTzChange()">
+        <option value="-12">UTC-12</option><option value="-11">UTC-11</option><option value="-10">UTC-10</option><option value="-9.5">UTC-9:30</option><option value="-9">UTC-9</option><option value="-8">UTC-8</option><option value="-7">UTC-7</option><option value="-6">UTC-6</option><option value="-5">UTC-5</option><option value="-4">UTC-4</option><option value="-3.5">UTC-3:30</option><option value="-3">UTC-3</option><option value="-2">UTC-2</option><option value="-1">UTC-1</option><option value="0" selected>UTC+0</option><option value="1">UTC+1</option><option value="2">UTC+2</option><option value="3">UTC+3</option><option value="3.5">UTC+3:30</option><option value="4">UTC+4</option><option value="4.5">UTC+4:30</option><option value="5">UTC+5</option><option value="5.5">UTC+5:30</option><option value="5.75">UTC+5:45</option><option value="6">UTC+6</option><option value="6.5">UTC+6:30</option><option value="7">UTC+7</option><option value="8">UTC+8</option><option value="8.75">UTC+8:45</option><option value="9">UTC+9</option><option value="9.5">UTC+9:30</option><option value="10">UTC+10</option><option value="10.5">UTC+10:30</option><option value="11">UTC+11</option><option value="12">UTC+12</option><option value="12.75">UTC+12:45</option><option value="13">UTC+13</option><option value="14">UTC+14</option>
+      </select>
       <button class="geo-btn" id="geo-btn" onclick="requestGeolocation()" title="Usar mi ubicación" aria-label="Obtener ubicación actual">Ubicación</button>
+    </div>
+    <div class="city-search-wrap">
+      <input type="text" id="city-search" class="city-search-input" placeholder="Buscar ciudad..." oninput="onCitySearch(this.value)" autocomplete="off" />
+      <div class="city-dropdown" id="city-dropdown"></div>
     </div>
     <div class="tz-meta" id="earth-altpress">Altitud: — · Presión: —</div>
     <div class="clock-wrap">
       <canvas class="clock-face" id="canvas-earth" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-earth">00:00:00</div>
     </div>
+    <div class="ampm-toggle-wrap">
+      <button class="ampm-btn" id="ampm-earth" onclick="toggleAMPM('earth')">24h</button>
+    </div>
     <div class="fine-time-ctrl" id="fine-earth">
-      <input class="fine-input" id="fi-earth-h" type="number" min="0" max="23" placeholder="HH" oninput="onFineTime('earth')" />
+      <div class="fine-col"><span class="fine-lbl">H</span><input class="fine-input" id="fi-earth-h" type="number" min="0" max="23" oninput="onFineTime('earth')" /></div>
       <span class="fine-sep">:</span>
-      <input class="fine-input" id="fi-earth-m" type="number" min="0" max="59" placeholder="MM" oninput="onFineTime('earth')" />
+      <div class="fine-col"><span class="fine-lbl">M</span><input class="fine-input" id="fi-earth-m" type="number" min="0" max="59" oninput="onFineTime('earth')" /></div>
       <span class="fine-sep">:</span>
-      <input class="fine-input" id="fi-earth-s" type="number" min="0" max="59" placeholder="SS" oninput="onFineTime('earth')" />
+      <div class="fine-col"><span class="fine-lbl">S</span><input class="fine-input" id="fi-earth-s" type="number" min="0" max="59" oninput="onFineTime('earth')" /></div>
     </div>
     <div class="date-block">
       <div class="day-num" id="earth-day">1</div>
@@ -645,12 +723,15 @@ body.light canvas.clock-face{background:transparent;}
         <canvas class="clock-face" id="canvas-lst" width="190" height="190"></canvas>
         <div class="clock-digital" id="digital-lst">00:00.0</div>
       </div>
+      <div class="ampm-toggle-wrap">
+        <button class="ampm-btn" id="ampm-lst" onclick="toggleAMPM('lst')">24h</button>
+      </div>
       <div class="fine-time-ctrl" id="fine-lst">
-        <input class="fine-input" id="fi-lst-h" type="number" min="0" max="23" placeholder="HH" oninput="onFineTime('lst')" />
+        <div class="fine-col"><span class="fine-lbl">H</span><input class="fine-input" id="fi-lst-h" type="number" min="0" max="23" oninput="onFineTime('lst')" /></div>
         <span class="fine-sep">:</span>
-        <input class="fine-input" id="fi-lst-m" type="number" min="0" max="59" placeholder="MM" oninput="onFineTime('lst')" />
+        <div class="fine-col"><span class="fine-lbl">M</span><input class="fine-input" id="fi-lst-m" type="number" min="0" max="59" oninput="onFineTime('lst')" /></div>
         <span class="fine-sep">:</span>
-        <input class="fine-input" id="fi-lst-s" type="number" min="0" max="59" placeholder="SS" oninput="onFineTime('lst')" />
+        <div class="fine-col"><span class="fine-lbl">S</span><input class="fine-input" id="fi-lst-s" type="number" min="0" max="59" oninput="onFineTime('lst')" /></div>
       </div>
       <div class="lst-sec-ref">
         <div class="sec-ref-label">1 Millilunour = <strong id="lst-ml-val">3.54367</strong> s Tierra · <span id="lst-pct">+254.37%</span> más lento</div>
@@ -679,9 +760,19 @@ body.light canvas.clock-face{background:transparent;}
           <button class="nbtn" id="lst-lune-prev" onclick="lstNav('lune',-1)" title="Lúnio anterior">‹</button>
         </div>
         <div class="cal-nav-center">
-          <div class="cal-nav-title" id="lst-cal-title">Lunación 1</div>
-          <input type="number" id="lst-lun-input" class="lun-direct-input" min="1" max="13316" placeholder="# Lun" aria-label="Número de lunación" oninput="onLSTLunInput(this.value)" />
+          <div class="cal-nav-title" id="lst-cal-title" onclick="openLunationPicker()" onkeydown="onLunationTitleKeydown(event)" role="button" tabindex="0" title="Click para seleccionar lunación">Lunación 1</div>
           <div class="cal-nav-sub" id="lst-cal-sub"></div>
+          <div class="lun-picker" id="lun-picker" style="display:none">
+            <div class="lun-picker-header">
+              <span>Ir a lunación</span>
+              <button class="lun-picker-close" aria-label="Cerrar selector de lunación" onclick="closeLunationPicker()">×</button>
+            </div>
+            <div class="lun-picker-body">
+              <input type="number" id="lun-jump-input" class="lun-jump-input" min="1" max="13316" placeholder="Núm. lunación" onkeydown="onLunJumpKeydown(event)" />
+              <button class="lun-jump-btn" onclick="applyLunationJump()">Ir</button>
+            </div>
+            <div class="lun-picker-hint">Lunación 1 = 1 Jan 1900 · Máx: 13316</div>
+          </div>
         </div>
         <div class="nav-group">
           <button class="nbtn" id="lst-lune-next" onclick="lstNav('lune',1)" title="Lúnio siguiente">›</button>
@@ -701,12 +792,15 @@ body.light canvas.clock-face{background:transparent;}
         <canvas class="clock-face" id="canvas-ltc" width="190" height="190"></canvas>
         <div class="clock-digital" id="digital-ltc">00:00:00</div>
       </div>
+      <div class="ampm-toggle-wrap">
+        <button class="ampm-btn" id="ampm-ltc" onclick="toggleAMPM('ltc')">24h</button>
+      </div>
       <div class="fine-time-ctrl" id="fine-ltc">
-        <input class="fine-input" id="fi-ltc-h" type="number" min="0" max="23" placeholder="HH" oninput="onFineTime('ltc')" />
+        <div class="fine-col"><span class="fine-lbl">H</span><input class="fine-input" id="fi-ltc-h" type="number" min="0" max="23" oninput="onFineTime('ltc')" /></div>
         <span class="fine-sep">:</span>
-        <input class="fine-input" id="fi-ltc-m" type="number" min="0" max="59" placeholder="MM" oninput="onFineTime('ltc')" />
+        <div class="fine-col"><span class="fine-lbl">M</span><input class="fine-input" id="fi-ltc-m" type="number" min="0" max="59" oninput="onFineTime('ltc')" /></div>
         <span class="fine-sep">:</span>
-        <input class="fine-input" id="fi-ltc-s" type="number" min="0" max="59" placeholder="SS" oninput="onFineTime('ltc')" />
+        <div class="fine-col"><span class="fine-lbl">S</span><input class="fine-input" id="fi-ltc-s" type="number" min="0" max="59" oninput="onFineTime('ltc')" /></div>
       </div>
       <div class="ltc-note">LTC (NASA/ESA): tiempo lunar coordinado relativista en formato 24h.</div>
       <div class="date-block">
@@ -751,12 +845,15 @@ body.light canvas.clock-face{background:transparent;}
       <canvas class="clock-face" id="canvas-mars" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-mars">00:00:00</div>
     </div>
+    <div class="ampm-toggle-wrap">
+      <button class="ampm-btn" id="ampm-mars" onclick="toggleAMPM('mars')">24h</button>
+    </div>
     <div class="fine-time-ctrl" id="fine-mars">
-      <input class="fine-input" id="fi-mars-h" type="number" min="0" max="23" placeholder="HH" oninput="onFineTime('mars')" />
+      <div class="fine-col"><span class="fine-lbl">H</span><input class="fine-input" id="fi-mars-h" type="number" min="0" max="23" oninput="onFineTime('mars')" /></div>
       <span class="fine-sep">:</span>
-      <input class="fine-input" id="fi-mars-m" type="number" min="0" max="59" placeholder="MM" oninput="onFineTime('mars')" />
+      <div class="fine-col"><span class="fine-lbl">M</span><input class="fine-input" id="fi-mars-m" type="number" min="0" max="59" oninput="onFineTime('mars')" /></div>
       <span class="fine-sep">:</span>
-      <input class="fine-input" id="fi-mars-s" type="number" min="0" max="59" placeholder="SS" oninput="onFineTime('mars')" />
+      <div class="fine-col"><span class="fine-lbl">S</span><input class="fine-input" id="fi-mars-s" type="number" min="0" max="59" oninput="onFineTime('mars')" /></div>
     </div>
     <div class="mars-sec-ref">
       <div class="sec-ref-label">1 s Tierra = 1.02749125 s Marte · +2.749% más lento</div>
@@ -843,12 +940,15 @@ body.light canvas.clock-face{background:transparent;}
       <canvas class="clock-face" id="canvas-darian" width="190" height="190"></canvas>
       <div class="clock-digital" id="digital-darian">00:00:00</div>
     </div>
+    <div class="ampm-toggle-wrap">
+      <button class="ampm-btn" id="ampm-darian" onclick="toggleAMPM('darian')">24h</button>
+    </div>
     <div class="fine-time-ctrl" id="fine-darian">
-      <input class="fine-input" id="fi-darian-h" type="number" min="0" max="23" placeholder="HH" oninput="onFineTime('darian')" />
+      <div class="fine-col"><span class="fine-lbl">H</span><input class="fine-input" id="fi-darian-h" type="number" min="0" max="23" oninput="onFineTime('darian')" /></div>
       <span class="fine-sep">:</span>
-      <input class="fine-input" id="fi-darian-m" type="number" min="0" max="59" placeholder="MM" oninput="onFineTime('darian')" />
+      <div class="fine-col"><span class="fine-lbl">M</span><input class="fine-input" id="fi-darian-m" type="number" min="0" max="59" oninput="onFineTime('darian')" /></div>
       <span class="fine-sep">:</span>
-      <input class="fine-input" id="fi-darian-s" type="number" min="0" max="59" placeholder="SS" oninput="onFineTime('darian')" />
+      <div class="fine-col"><span class="fine-lbl">S</span><input class="fine-input" id="fi-darian-s" type="number" min="0" max="59" oninput="onFineTime('darian')" /></div>
     </div>
     <div class="mars-sec-ref">
       <div class="sec-ref-label">1 s Tierra = 1.02749125 s Marte · +2.749% más lento</div>
@@ -931,17 +1031,7 @@ body.light canvas.clock-face{background:transparent;}
   <div class="rovers-grid" id="rovers-grid"></div>
 </section>
 
-<section class="rovers-panel" id="panel-mars-pois" style="display:none">
-  <div class="rovers-head">
-    <div class="badge"><span class="dot"></span>Puntos de Interés — Marte</div>
-    <div class="badge-sub">Hora MTC local + salida/puesta del Sol + coordenadas + temperatura estimada</div>
-  </div>
-  <div class="tz-bar">
-    <span class="tz-label">POI:</span>
-    <select id="mars-poi-select" class="tz-select" onchange="onMarsPoiChange(this.value)"></select>
-  </div>
-  <div class="poi-card" id="mars-poi-card"></div>
-</section>
+<section id="poi-section" style="width:100%;max-width:1300px;display:flex;gap:1.2rem;flex-wrap:wrap;"></section>
 
 <!-- ═══════ DATE PICKER POPOVER (shared) ═══════ -->
 <div id="dp-popover" class="dp-popover" style="display:none">
@@ -1071,7 +1161,17 @@ const MARS_POIS = [
   { name:'Arabia Terra', lat:21.0, lon:6.0, desc:'Región cratérica antigua', altitudeM:2000, pressureAtm:0.0072, pressurePa:730 },
   { name:'Tharsis', lat:0.0, lon:247.0, desc:'Meseta volcánica gigante', altitudeM:9000, pressureAtm:0.0045, pressurePa:460 },
   { name:'Cráter Korolev', lat:73.0, lon:165.0, desc:'Hielo permanente en latitudes altas', altitudeM:1200, pressureAtm:0.0075, pressurePa:760 },
-  { name:'Argyre Planitia', lat:-49.7, lon:316.0, desc:'Gran cuenca de impacto sur', altitudeM:-4200, pressureAtm:0.0110, pressurePa:1115 }
+  { name:'Argyre Planitia', lat:-49.7, lon:316.0, desc:'Gran cuenca de impacto sur', altitudeM:-4200, pressureAtm:0.0110, pressurePa:1115 },
+  { name:'Tharsis Bulge', lat:0.0, lon:247.0, desc:'Abultamiento volcánico de Tharsis', altitudeM:8000, pressureAtm:0.0048, pressurePa:486 },
+  { name:'Cráter Gale (Curiosity)', lat:-5.4, lon:137.8, desc:'Sitio de Curiosity', altitudeM:-4400, pressureAtm:0.0098, pressurePa:995 },
+  { name:'Jezero (Perseverance)', lat:18.4, lon:77.6, desc:'Sitio de Perseverance', altitudeM:-2600, pressureAtm:0.0085, pressurePa:860 },
+  { name:'Elysium Planitia (InSight)', lat:4.5, lon:135.6, desc:'Sitio de InSight', altitudeM:-2600, pressureAtm:0.0084, pressurePa:850 },
+  { name:'Pavonis Mons', lat:0.8, lon:246.6, desc:'Volcán de la región Tharsis', altitudeM:14000, pressureAtm:0.0035, pressurePa:355 },
+  { name:'Ascraeus Mons', lat:11.9, lon:255.5, desc:'Gran volcán en Tharsis', altitudeM:18000, pressureAtm:0.0028, pressurePa:284 },
+  { name:'Chryse Planitia (Viking 1)', lat:22.3, lon:312.0, desc:'Sitio de Viking 1', altitudeM:-2500, pressureAtm:0.0086, pressurePa:872 },
+  { name:'Meridiani Planum (Opportunity)', lat:-1.9, lon:354.5, desc:'Sitio de Opportunity', altitudeM:-1400, pressureAtm:0.0078, pressurePa:791 },
+  { name:'Gusev (Spirit)', lat:-14.6, lon:175.5, desc:'Sitio de Spirit', altitudeM:-1800, pressureAtm:0.0079, pressurePa:801 },
+  { name:'Utopia Planitia (Viking 2)', lat:48.3, lon:225.9, desc:'Sitio de Viking 2', altitudeM:-4300, pressureAtm:0.0103, pressurePa:1045 }
 ];
 const LUNAR_POIS = [
   { name:'Mare Tranquillitatis', lat:8.5, lon:31.4, desc:'Lugar del Apollo 11', altitudeM:-3800 },
@@ -1083,7 +1183,9 @@ const LUNAR_POIS = [
   { name:'Oceanus Procellarum', lat:18.4, lon:-57.4, desc:'Océano de tempestades', altitudeM:-4200 },
   { name:'Mare Crisium', lat:17.0, lon:59.1, desc:'Mar de crisis', altitudeM:-3500 },
   { name:'Far Side / Moscoviense', lat:27.3, lon:147.9, desc:'Cara oculta de la Luna', altitudeM:-3400 },
-  { name:'Cráter Aristarchus', lat:23.7, lon:-47.4, desc:'Zona volcánica brillante', altitudeM:-3800 }
+  { name:'Cráter Aristarchus', lat:23.7, lon:-47.4, desc:'Zona volcánica brillante', altitudeM:-3800 },
+  { name:'Cráter Shackleton', lat:-89.9, lon:0.0, desc:'Cráter en polo sur', altitudeM:-3600 },
+  { name:'Apollo 11 Landing Site', lat:0.67, lon:23.47, desc:'Mare Tranquillitatis · Apollo 11', altitudeM:-3700 }
 ];
 const EARTH_UTC_CITIES = [
   { offset:0, name:'Londres', lat:51.51, lon:-0.13, altM:11, pressureAtm:1.000, api:true },
@@ -1095,6 +1197,53 @@ const EARTH_UTC_CITIES = [
   { offset:9, name:'Tokio', lat:35.69, lon:139.69, altM:40, pressureAtm:0.995, api:true },
   { offset:-8, name:'Los Ángeles', lat:34.05, lon:-118.24, altM:71, pressureAtm:0.992, api:true },
   { offset:12, name:'Auckland', lat:-36.86, lon:174.76, altM:7, pressureAtm:1.000, api:true }
+];
+const EARTH_CITIES = [
+  { name:'Nueva York', lat:40.71, lon:-74.01, utc:-5, country:'EE.UU.' }, { name:'Los Ángeles', lat:34.05, lon:-118.24, utc:-8, country:'EE.UU.' },
+  { name:'Chicago', lat:41.88, lon:-87.63, utc:-6, country:'EE.UU.' }, { name:'Miami', lat:25.77, lon:-80.19, utc:-5, country:'EE.UU.' },
+  { name:'Toronto', lat:43.65, lon:-79.38, utc:-5, country:'Canadá' }, { name:'Vancouver', lat:49.28, lon:-123.12, utc:-8, country:'Canadá' },
+  { name:'Ciudad de México', lat:19.43, lon:-99.13, utc:-6, country:'México' }, { name:'Cancún', lat:21.16, lon:-86.85, utc:-5, country:'México' },
+  { name:'Playa del Carmen', lat:20.63, lon:-87.08, utc:-5, country:'México' }, { name:'Monterrey', lat:25.67, lon:-100.31, utc:-6, country:'México' },
+  { name:'Guadalajara', lat:20.66, lon:-103.35, utc:-6, country:'México' }, { name:'Tijuana', lat:32.53, lon:-117.04, utc:-8, country:'México' },
+  { name:'La Habana', lat:23.14, lon:-82.36, utc:-5, country:'Cuba' }, { name:'Bogotá', lat:4.71, lon:-74.07, utc:-5, country:'Colombia' },
+  { name:'Lima', lat:-12.05, lon:-77.04, utc:-5, country:'Perú' }, { name:'Santiago', lat:-33.45, lon:-70.67, utc:-3, country:'Chile' },
+  { name:'Buenos Aires', lat:-34.61, lon:-58.38, utc:-3, country:'Argentina' }, { name:'São Paulo', lat:-23.55, lon:-46.63, utc:-3, country:'Brasil' },
+  { name:'Río de Janeiro', lat:-22.91, lon:-43.17, utc:-3, country:'Brasil' }, { name:'Brasília', lat:-15.78, lon:-47.93, utc:-3, country:'Brasil' },
+  { name:'Caracas', lat:10.49, lon:-66.88, utc:-4, country:'Venezuela' }, { name:'Quito', lat:-0.22, lon:-78.51, utc:-5, country:'Ecuador' },
+  { name:'Asunción', lat:-25.29, lon:-57.65, utc:-4, country:'Paraguay' }, { name:'Montevideo', lat:-34.90, lon:-56.19, utc:-3, country:'Uruguay' },
+  { name:'Londres', lat:51.51, lon:-0.13, utc:0, country:'Reino Unido' }, { name:'París', lat:48.86, lon:2.35, utc:1, country:'Francia' },
+  { name:'Madrid', lat:40.42, lon:-3.70, utc:1, country:'España' }, { name:'Barcelona', lat:41.39, lon:2.17, utc:1, country:'España' },
+  { name:'Berlín', lat:52.52, lon:13.40, utc:1, country:'Alemania' }, { name:'Múnich', lat:48.14, lon:11.58, utc:1, country:'Alemania' },
+  { name:'Roma', lat:41.90, lon:12.50, utc:1, country:'Italia' }, { name:'Milán', lat:45.46, lon:9.19, utc:1, country:'Italia' },
+  { name:'Amsterdam', lat:52.37, lon:4.90, utc:1, country:'Países Bajos' }, { name:'Bruselas', lat:50.85, lon:4.35, utc:1, country:'Bélgica' },
+  { name:'Lisboa', lat:38.72, lon:-9.14, utc:0, country:'Portugal' }, { name:'Moscú', lat:55.75, lon:37.62, utc:3, country:'Rusia' },
+  { name:'Kiev', lat:50.45, lon:30.52, utc:2, country:'Ucrania' }, { name:'Estambul', lat:41.01, lon:28.96, utc:3, country:'Turquía' },
+  { name:'Atenas', lat:37.98, lon:23.73, utc:2, country:'Grecia' }, { name:'Viena', lat:48.21, lon:16.37, utc:1, country:'Austria' },
+  { name:'Zürich', lat:47.38, lon:8.54, utc:1, country:'Suiza' }, { name:'Estocolmo', lat:59.33, lon:18.07, utc:1, country:'Suecia' },
+  { name:'Helsinki', lat:60.17, lon:24.94, utc:2, country:'Finlandia' }, { name:'Dublín', lat:53.33, lon:-6.25, utc:0, country:'Irlanda' },
+  { name:'Reikiavik', lat:64.14, lon:-21.89, utc:0, country:'Islandia' }, { name:'El Cairo', lat:30.04, lon:31.24, utc:2, country:'Egipto' },
+  { name:'Lagos', lat:6.45, lon:3.40, utc:1, country:'Nigeria' }, { name:'Nairobi', lat:-1.29, lon:36.82, utc:3, country:'Kenia' },
+  { name:'Johannesburgo', lat:-26.20, lon:28.04, utc:2, country:'Sudáfrica' }, { name:'Casablanca', lat:33.59, lon:-7.62, utc:1, country:'Marruecos' },
+  { name:'Pekín', lat:39.91, lon:116.39, utc:8, country:'China' }, { name:'Shanghái', lat:31.23, lon:121.47, utc:8, country:'China' },
+  { name:'Hong Kong', lat:22.32, lon:114.17, utc:8, country:'China' }, { name:'Tokio', lat:35.69, lon:139.69, utc:9, country:'Japón' },
+  { name:'Osaka', lat:34.69, lon:135.50, utc:9, country:'Japón' }, { name:'Seúl', lat:37.57, lon:126.98, utc:9, country:'Corea del Sur' },
+  { name:'Bangkok', lat:13.75, lon:100.52, utc:7, country:'Tailandia' }, { name:'Singapur', lat:1.35, lon:103.82, utc:8, country:'Singapur' },
+  { name:'Kuala Lumpur', lat:3.14, lon:101.69, utc:8, country:'Malasia' }, { name:'Yakarta', lat:-6.21, lon:106.85, utc:7, country:'Indonesia' },
+  { name:'Manila', lat:14.60, lon:120.98, utc:8, country:'Filipinas' }, { name:'Hanói', lat:21.03, lon:105.85, utc:7, country:'Vietnam' },
+  { name:'Nueva Delhi', lat:28.61, lon:77.21, utc:5.5, country:'India' }, { name:'Mumbai', lat:19.08, lon:72.88, utc:5.5, country:'India' },
+  { name:'Bengaluru', lat:12.97, lon:77.59, utc:5.5, country:'India' }, { name:'Karachi', lat:24.86, lon:67.01, utc:5, country:'Pakistán' },
+  { name:'Dhaka', lat:23.72, lon:90.41, utc:6, country:'Bangladesh' }, { name:'Yangón', lat:16.80, lon:96.16, utc:6.5, country:'Birmania' },
+  { name:'Colombo', lat:6.93, lon:79.85, utc:5.5, country:'Sri Lanka' }, { name:'Katmandú', lat:27.71, lon:85.31, utc:5.75, country:'Nepal' },
+  { name:'Riad', lat:24.69, lon:46.72, utc:3, country:'Arabia Saudita' }, { name:'Dubái', lat:25.20, lon:55.27, utc:4, country:'EAU' },
+  { name:'Doha', lat:25.29, lon:51.53, utc:3, country:'Qatar' }, { name:'Teherán', lat:35.69, lon:51.42, utc:3.5, country:'Irán' },
+  { name:'Tel Aviv', lat:32.08, lon:34.78, utc:2, country:'Israel' }, { name:'Ammán', lat:31.96, lon:35.95, utc:3, country:'Jordania' },
+  { name:'Taskent', lat:41.30, lon:69.27, utc:5, country:'Uzbekistán' }, { name:'Almaty', lat:43.25, lon:76.96, utc:6, country:'Kazajistán' },
+  { name:'Ulaanbaatar', lat:47.91, lon:106.92, utc:8, country:'Mongolia' }, { name:'Kabul', lat:34.53, lon:69.17, utc:4.5, country:'Afganistán' },
+  { name:'Sídney', lat:-33.87, lon:151.21, utc:10, country:'Australia' }, { name:'Melbourne', lat:-37.81, lon:144.96, utc:10, country:'Australia' },
+  { name:'Brisbane', lat:-27.47, lon:153.02, utc:10, country:'Australia' }, { name:'Perth', lat:-31.95, lon:115.86, utc:8, country:'Australia' },
+  { name:'Auckland', lat:-36.86, lon:174.77, utc:12, country:'Nueva Zelanda' }, { name:'Wellington', lat:-41.29, lon:174.78, utc:12, country:'Nueva Zelanda' },
+  { name:'Honolulu', lat:21.31, lon:-157.86, utc:-10, country:'EE.UU.' }, { name:'Suva', lat:-18.14, lon:178.44, utc:12, country:'Fiyi' },
+  { name:'Longyearbyen', lat:78.22, lon:15.65, utc:1, country:'Svalbard' }, { name:'Base McMurdo', lat:-77.85, lon:166.67, utc:12, country:'Antártida' }
 ];
 const EARTH_GRAVITY_REGIONS = [
   { id:'ecuador', name:'Ecuador (0°)', g:9.7803 },
@@ -1136,7 +1285,7 @@ let dNavYear, dNavMonth, dSelSol = null, dNavLive = true;
 let lstNavLunation, lstNavLune, lstSelLune = null, lstNavLive = true;
 let marsMode = 'none';
 let darkMode = true;
-let selectedUtcOffset = -5;
+let selectedUtcOffset = 0;
 let selectedMarsOffset = 0;
 let lunarMode = 'lst';
 let selectedMarsPoi = 0;
@@ -1181,60 +1330,88 @@ let geoLat = null, geoLon = null;
 let earthObserverLat = 51.51;
 let earthObserverLon = -0.13;
 
-// ── NÚCLEO DEL TIEMPO SIMULADO ──
-let simOffset = 0;
-let simRunning = true;
-let simFrozenAt = null;
-let SIM_NOW = new Date(Date.now());
+// ── TIEMPO INDEPENDIENTE POR CUERPO ──
+let earthTime = new Date();
+let moonTime = new Date();
+let marsTime = new Date();
+let earthFrozen = false, moonFrozen = false, marsFrozen = false;
+let earthFrozenAt = null, moonFrozenAt = null, marsFrozenAt = null;
+const ampmModes = { earth:'24h', mars:'24h', darian:'24h', lst:'24h', ltc:'24h' };
 
-function getSimDate() {
-  if (!simRunning && simFrozenAt !== null) return new Date(simFrozenAt);
-  return new Date(Date.now() + simOffset);
+function tickTimes() {
+  if (syncMode) {
+    const earthNow = earthFrozen ? new Date(earthFrozenAt) : new Date();
+    earthTime = earthNow;
+    moonTime = new Date(earthNow.getTime());
+    marsTime = new Date(earthNow.getTime());
+    return;
+  }
+  const now = new Date();
+  earthTime = earthFrozen ? new Date(earthFrozenAt) : now;
+  moonTime = moonFrozen ? new Date(moonFrozenAt) : now;
+  marsTime = marsFrozen ? new Date(marsFrozenAt) : now;
 }
-function tickSimTime() {
-  SIM_NOW = getSimDate();
+function getPanelTime(panel){
+  if(panel==='earth') return earthTime;
+  if(panel==='moon' || panel==='lst' || panel==='ltc') return moonTime;
+  return marsTime;
 }
-function resetToRealTime() {
-  simOffset = 0;
-  simRunning = true;
-  simFrozenAt = null;
-  SIM_NOW = new Date(Date.now());
-  syncAllCalendarsToSim();
-  updateSimDatetimeInput();
-}
-function jumpToDate(dateObj) {
+function jumpEarth(dateObj) {
   if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return;
-  simFrozenAt = dateObj.getTime();
-  simRunning = false;
-  simOffset = 0;
-  SIM_NOW = new Date(simFrozenAt);
-  syncAllCalendarsToSim();
-  updateSimDatetimeInput();
+  earthFrozen = true; earthFrozenAt = dateObj.getTime(); eNavLive = false;
+  if(syncMode){ moonFrozen = true; marsFrozen = true; moonFrozenAt = earthFrozenAt; marsFrozenAt = earthFrozenAt; }
+}
+function jumpMoon(dateObj) {
+  if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return;
+  moonFrozen = true; moonFrozenAt = dateObj.getTime(); lstNavLive = false;
+}
+function jumpMars(dateObj) {
+  if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return;
+  marsFrozen = true; marsFrozenAt = dateObj.getTime(); mNavLive = false; dNavLive = false;
 }
 function onSimDatetimeInput(val) {
   if (!val) return;
-  jumpToDate(new Date(val));
+  jumpEarth(new Date(val));
 }
 function updateSimDatetimeInput() {
-  const d = SIM_NOW;
+  const d = earthTime;
   const iso = d.toISOString().slice(0,16);
   const inp = document.getElementById('sim-datetime-input');
   if (inp && document.activeElement !== inp) inp.value = iso;
+}
+function toggleAMPM(panel) {
+  ampmModes[panel] = ampmModes[panel] === '24h' ? '12h' : '24h';
+  const btn = document.getElementById('ampm-' + panel);
+  if (btn) {
+    btn.textContent = ampmModes[panel];
+    btn.classList.toggle('active', ampmModes[panel] === '12h');
+  }
+}
+function formatHour(h24, panel) {
+  if (ampmModes[panel] === '24h') return String(h24).padStart(2, '0');
+  // 0->12 AM y 12->12 PM
+  const h12 = h24 % 12 || 12;
+  const ampm = h24 < 12 ? 'AM' : 'PM';
+  return String(h12).padStart(2, '0') + ' ' + ampm;
 }
 function onFineTime(panel) {
   const rawH = parseInt(document.getElementById('fi-'+panel+'-h')?.value, 10);
   const rawM = parseInt(document.getElementById('fi-'+panel+'-m')?.value, 10);
   const rawS = parseInt(document.getElementById('fi-'+panel+'-s')?.value, 10);
-  const d = new Date(SIM_NOW.getTime());
+  const sourcePanel = (panel === 'earth') ? 'earth' : (panel === 'mars' || panel === 'darian') ? 'mars' : 'moon';
+  const d = new Date(getPanelTime(sourcePanel).getTime());
   const h = Number.isFinite(rawH) ? Math.max(0, Math.min(23, rawH)) : d.getUTCHours();
   const m = Number.isFinite(rawM) ? Math.max(0, Math.min(59, rawM)) : d.getUTCMinutes();
   const s = Number.isFinite(rawS) ? Math.max(0, Math.min(59, rawS)) : d.getUTCSeconds();
   d.setUTCHours(h, m, s, 0);
-  jumpToDate(d);
+  if (sourcePanel === 'earth') jumpEarth(d);
+  else if (sourcePanel === 'mars') jumpMars(d);
+  else jumpMoon(d);
 }
 function updateFineInputs() {
-  const d = SIM_NOW;
+  const map = { earth:earthTime, mars:marsTime, darian:marsTime, lst:moonTime, ltc:moonTime };
   ['earth','mars','darian','lst','ltc'].forEach(p => {
+    const d = map[p];
     const ih = document.getElementById('fi-'+p+'-h');
     const im = document.getElementById('fi-'+p+'-m');
     const is = document.getElementById('fi-'+p+'-s');
@@ -1248,6 +1425,9 @@ function updateFineInputs() {
    UTILIDADES GENERALES
 ══════════════════════════════════════════════ */
 function pad(n, w=2){ return String(n).padStart(w,'0'); }
+function normalizeSearchString(str){
+  return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 
 function dateToJD(d){ return d.getTime()/86400000 + 2440587.5; }
 
@@ -1891,12 +2071,11 @@ function drawHorizonCanvas(canvas, bodies, type, skyDarkness) {
     ctx.fillRect(0, horizonY*0.45, W, horizonY*0.55);
   }
 }
-function updateHorizons(now) {
-  const current = now || SIM_NOW;
-  const earthSun = getSunPosition(current, earthObserverLat, earthObserverLon);
-  const earthMoon = getMoonPosition(current, earthObserverLat, earthObserverLon);
-  const earthMars = getMarsPositionFromEarth(current, earthObserverLat, earthObserverLon);
-  const phase = getLunarPhaseFraction(current);
+function updateHorizons() {
+  const earthSun = getSunPosition(earthTime, earthObserverLat, earthObserverLon);
+  const earthMoon = getMoonPosition(earthTime, earthObserverLat, earthObserverLon);
+  const earthMars = getMarsPositionFromEarth(earthTime, earthObserverLat, earthObserverLon);
+  const phase = getLunarPhaseFraction(earthTime);
   const earthDarkness = Math.max(0, -earthSun.altitude / 18);
   drawHorizonCanvas(
     document.getElementById('horizon-earth'),
@@ -1913,14 +2092,14 @@ function updateHorizons(now) {
     earthInfo.textContent = `Sol: ${formatAzAlt(earthSun)} | Sale ${earthAstroDisplay.sunrise} Pone ${earthAstroDisplay.sunset} | Luna: ${formatAzAlt(earthMoon, true)} | Marte: ${formatAzAlt(earthMars)}`;
   }
 
-  const MSD = getMSD(current);
+  const MSD = getMSD(marsTime);
   const mtcH = getMTC(MSD);
   const localMtcH = wrap24(mtcH + signedLongitude(selectedMarsLon) / DEGREES_PER_TIMEZONE_HOUR);
   const mtcTotalSec = MSD * 88775.244;
   const marsSun = getSunPositionMars(localMtcH, selectedMarsLat);
   const phobos = getPhobosPosition(mtcTotalSec, selectedMarsLat, selectedMarsLon);
   const deimos = getDeimosPosition(mtcTotalSec, selectedMarsLat, selectedMarsLon);
-  const earthFromMars = getEarthFromMars(current, selectedMarsLat, selectedMarsLon);
+  const earthFromMars = getEarthFromMars(marsTime, selectedMarsLat, selectedMarsLon);
   const marsDarkness = Math.max(0, (-marsSun.altitude - 3) / 15);
   drawHorizonCanvas(
     document.getElementById('horizon-mars'),
@@ -1941,10 +2120,10 @@ function updateHorizons(now) {
     marsInfo.textContent = `Sol: sale ${formatHHMM(sunriseMtc)} MTC pone ${formatHHMM(sunsetMtc)} MTC | Fobos: Az ${pad(Math.round(wrap360(phobos.azimuth)),3)}° Alt ${Math.round(phobos.altitude)}° (sale por O, pone por E) | Deimos: Az ${pad(Math.round(wrap360(deimos.azimuth)),3)}° Alt ${Math.round(deimos.altitude)}° | Tierra: ${formatAzAlt(earthFromMars)}`;
   }
 
-  const sunPosMoon = getSunFromMoon(current, selectedMoonLat, selectedMoonLon);
+  const sunPosMoon = getSunFromMoon(moonTime, selectedMoonLat, selectedMoonLon);
   const earthPosMoon = getEarthFromMoon(selectedMoonLat, selectedMoonLon);
-  const marsPosMoon = getMarsFromMoon(current, selectedMoonLat, selectedMoonLon);
-  const moonLight = getLunarLightAndTemp(current, { lat:selectedMoonLat, lon:selectedMoonLon });
+  const marsPosMoon = getMarsFromMoon(moonTime, selectedMoonLat, selectedMoonLon);
+  const moonLight = getLunarLightAndTemp(moonTime, { lat:selectedMoonLat, lon:selectedMoonLon });
   drawHorizonCanvas(
     document.getElementById('horizon-moon'),
     [
@@ -2397,67 +2576,36 @@ function buildLSTCal(nLun, tLun, tLune, sel){
   document.getElementById('lst-lune-next').disabled = false;
   document.getElementById('lst-lun-next').disabled = (nLun>=MAX_LST_LUNATION);
 }
-function onLSTLunInput(val) {
-  const n = parseInt(val, 10);
-  if (!Number.isFinite(n)) return;
-  if (n >= 1 && n <= MAX_LST_LUNATION) {
-    lstNavLunation = n;
-    lstNavLune = 1;
-    lstNavLive = false;
-    const secFromEpoch = (n - 1) * LUNATION_SEC;
-    jumpToDate(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
+function openLunationPicker() {
+  const picker = document.getElementById('lun-picker');
+  if(!picker) return;
+  picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+function onLunationTitleKeydown(event){
+  if(event.key === 'Enter' || event.key === ' '){
+    event.preventDefault();
+    openLunationPicker();
   }
 }
-
-function syncAllCalendarsToSim() {
-  const d = SIM_NOW;
-  const tY = d.getUTCFullYear();
-  const tM = d.getUTCMonth() + 1;
-  const tD = d.getUTCDate();
-  if (eNavLive) {
-    eNavYear = tY;
-    eNavMonth = tM;
-    eSelDay = tD;
-    buildEarthCal(tY, tM, tY, tM, tD, tD);
-  } else {
-    buildEarthCal(eNavYear, eNavMonth, tY, tM, tD, eSelDay);
+function onLunJumpKeydown(event){
+  if(event.key === 'Enter') applyLunationJump();
+}
+function closeLunationPicker() {
+  const picker = document.getElementById('lun-picker');
+  if(picker) picker.style.display = 'none';
+}
+function applyLunationJump() {
+  const val = parseInt(document.getElementById('lun-jump-input')?.value, 10);
+  if (val >= 1 && val <= MAX_LST_LUNATION) {
+    lstNavLunation = val;
+    lstNavLune = 1;
+    lstNavLive = false;
+    const secFromEpoch = (val - 1) * LUNATION_SEC;
+    jumpMoon(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
+    buildLSTCal(lstNavLunation, lstNavLunation, 1, 1);
+    document.getElementById('lst-cal-title').textContent = 'Lunación ' + val;
   }
-
-  const ts = solsFromEpoch(d);
-  const sil = silinFromTotalSols(ts);
-  if (mNavLive) {
-    mNavYear = sil.year;
-    mNavMonth = sil.month;
-    mSelSol = sil.sol;
-    buildMarsCal(sil.year, sil.month, sil.year, sil.month, sil.sol, sil.sol);
-  } else {
-    buildMarsCal(mNavYear, mNavMonth, sil.year, sil.month, sil.sol, mSelSol);
-  }
-
-  const dar = darFromTotalSols(ts);
-  if (dNavLive) {
-    dNavYear = dar.year;
-    dNavMonth = dar.month;
-    dSelSol = dar.sol;
-    buildDarCal(dar.year, dar.month, dar.year, dar.month, dar.sol, dar.sol);
-  } else {
-    buildDarCal(dNavYear, dNavMonth, dar.year, dar.month, dar.sol, dSelSol);
-  }
-
-  const lstSec = (d.getTime() - LST_EPOCH_MS) / 1000;
-  const currentLunation = Math.max(1, Math.floor(lstSec / LUNATION_SEC) + 1);
-  const secInLunation = ((lstSec % LUNATION_SEC) + LUNATION_SEC) % LUNATION_SEC;
-  const currentLune = Math.max(1, Math.floor(secInLunation / LUNE_SEC) + 1);
-  if (lstNavLive) {
-    lstNavLunation = currentLunation;
-    lstNavLune = currentLune;
-    lstSelLune = currentLune;
-    buildLSTCal(currentLunation, currentLunation, currentLune, currentLune);
-  } else {
-    buildLSTCal(lstNavLunation, currentLunation, currentLune, lstSelLune);
-  }
-
-  tick();
+  closeLunationPicker();
 }
 
 /* ══════════════════════════════════════════════
@@ -2469,8 +2617,7 @@ function earthNav(unit, dir){
   eNavYear = Math.max(1, Math.min(MAX_EARTH_YEAR, eNavYear));
   eNavMonth = Math.max(1, Math.min(12, eNavMonth));
   eSelDay = null; eNavLive = false; setSelInfo('earth', null);
-  renderEarth(SIM_NOW);
-  if(syncMode) syncFromEarth(eNavYear, eNavMonth, 1, false);
+  renderEarth(earthTime);
 }
 
 function marsNav(unit, dir){
@@ -2479,8 +2626,7 @@ function marsNav(unit, dir){
   mNavYear = Math.max(1, Math.min(MAX_MARS_YEAR, mNavYear));
   mNavMonth = Math.max(1, Math.min(12, mNavMonth));
   mSelSol = null; mNavLive = false; setSelInfo('mars', null);
-  renderMars(SIM_NOW);
-  if(syncMode) syncFromSilin(mNavYear, mNavMonth, 1, false);
+  renderMars(marsTime);
 }
 
 function darianNav(unit, dir){
@@ -2489,8 +2635,7 @@ function darianNav(unit, dir){
   dNavYear = Math.max(1, Math.min(MAX_DAR_YEAR, dNavYear));
   dNavMonth = Math.max(1, Math.min(24, dNavMonth));
   dSelSol = null; dNavLive = false; setSelInfo('darian', null);
-  renderDar(SIM_NOW);
-  if(syncMode) syncFromDar(dNavYear, dNavMonth, 1, false);
+  renderDar(marsTime);
 }
 
 function lstNav(unit, dir){
@@ -2509,53 +2654,7 @@ function lstNav(unit, dir){
   }
   lstNavLunation = Math.max(1, Math.min(MAX_LST_LUNATION, lstNavLunation));
   lstSelLune = null; lstNavLive = false; setSelInfo('lst', null);
-  buildLSTCal(lstNavLunation, getLST(SIM_NOW).lunation, getLST(SIM_NOW).lune, lstSelLune);
-}
-
-/* ══════════════════════════════════════════════
-   3-WAY SYNC HELPERS
-══════════════════════════════════════════════ */
-function syncFromEarth(y, m, d, withSel){
-  const now = SIM_NOW;
-  const sil = earthToSilin(y,m,d);
-  mNavYear=sil.year; mNavMonth=sil.month; mSelSol=withSel?sil.sol:null; mNavLive=false;
-  const dar = earthToDar(y,m,d);
-  dNavYear=dar.year; dNavMonth=dar.month; dSelSol=withSel?dar.sol:null; dNavLive=false;
-  const ed = new Date(Date.UTC(y,m-1,d));
-  const lstSec = (ed.getTime() - LST_EPOCH_MS) / 1000;
-  lstNavLunation = Math.floor(lstSec / LUNATION_SEC) + 1;
-  lstNavLune = Math.floor((lstSec % LUNATION_SEC) / LUNE_SEC) + 1;
-  lstSelLune = withSel ? lstNavLune : null;
-  lstNavLive = false;
-  renderMars(now); renderDar(now); renderLST(now);
-}
-
-function syncFromSilin(y, m, s, withSel){
-  const now = SIM_NOW;
-  const ed = silinToEarth(y,m,s);
-  eNavYear=ed.getUTCFullYear(); eNavMonth=ed.getUTCMonth()+1; eSelDay=withSel?ed.getUTCDate():null; eNavLive=false;
-  const dar = silinToDar(y,m,s);
-  dNavYear=dar.year; dNavMonth=dar.month; dSelSol=withSel?dar.sol:null; dNavLive=false;
-  const lstSec = (ed.getTime() - LST_EPOCH_MS) / 1000;
-  lstNavLunation = Math.floor(lstSec / LUNATION_SEC) + 1;
-  lstNavLune = Math.floor((lstSec % LUNATION_SEC) / LUNE_SEC) + 1;
-  lstSelLune = withSel ? lstNavLune : null;
-  lstNavLive = false;
-  renderEarth(now); renderDar(now); renderLST(now);
-}
-
-function syncFromDar(y, m, s, withSel){
-  const now = SIM_NOW;
-  const ed = darToEarth(y,m,s);
-  eNavYear=ed.getUTCFullYear(); eNavMonth=ed.getUTCMonth()+1; eSelDay=withSel?ed.getUTCDate():null; eNavLive=false;
-  const sil = darToSilin(y,m,s);
-  mNavYear=sil.year; mNavMonth=sil.month; mSelSol=withSel?sil.sol:null; mNavLive=false;
-  const lstSec = (ed.getTime() - LST_EPOCH_MS) / 1000;
-  lstNavLunation = Math.floor(lstSec / LUNATION_SEC) + 1;
-  lstNavLune = Math.floor((lstSec % LUNATION_SEC) / LUNE_SEC) + 1;
-  lstSelLune = withSel ? lstNavLune : null;
-  lstNavLive = false;
-  renderEarth(now); renderMars(now); renderLST(now);
+  buildLSTCal(lstNavLunation, getLST(moonTime).lunation, getLST(moonTime).lune, lstSelLune);
 }
 
 /* ══════════════════════════════════════════════
@@ -2567,11 +2666,7 @@ function onEarthClick(d){
     ? EARTH_DAYS_FULL[new Date(Date.UTC(eNavYear,eNavMonth-1,eSelDay)).getUTCDay()]
       + `, ${eSelDay} de ${EARTH_MONTHS[eNavMonth-1]} de ${eNavYear}` : null;
   setSelInfo('earth', txt);
-  jumpToDate(new Date(Date.UTC(eNavYear, eNavMonth-1, eSelDay)));
-  const sil = earthToSilin(eNavYear,eNavMonth,eSelDay);
-  setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
-  const dar = earthToDar(eNavYear,eNavMonth,eSelDay);
-  setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
+  jumpEarth(new Date(Date.UTC(eNavYear, eNavMonth-1, eSelDay)));
 }
 
 function onMarsClick(sol){
@@ -2579,11 +2674,7 @@ function onMarsClick(sol){
   const wd = (solsAtMonthStart(mNavYear,mNavMonth) + (mSelSol||1) - 1) % 7;
   const txt = mSelSol ? `${MARS_DAYS_FULL[wd]}, Sol ${mSelSol} de ${MARS_MONTHS[mNavMonth-1]}, MY ${mNavYear}` : null;
   setSelInfo('mars', txt);
-  jumpToDate(silinToEarth(mNavYear,mNavMonth,mSelSol));
-  const ed = silinToEarth(mNavYear,mNavMonth,mSelSol);
-  setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
-  const dar = silinToDar(mNavYear,mNavMonth,mSelSol);
-  setSelInfo('darian', `${DAR_DAYS_FULL[dar.weekday]}, Sol ${dar.sol} de ${DAR_MONTHS[dar.month-1]}, ${dar.year}`);
+  jumpMars(silinToEarth(mNavYear,mNavMonth,mSelSol));
 }
 
 function onDarClick(sol){
@@ -2591,11 +2682,7 @@ function onDarClick(sol){
   const wd = (darSolsAtMonthStart(dNavYear,dNavMonth) + (dSelSol||1) - 1 + 1) % 7;
   const txt = dSelSol ? `${DAR_DAYS_FULL[wd]}, Sol ${dSelSol} de ${DAR_MONTHS[dNavMonth-1]}, ${dNavYear}` : null;
   setSelInfo('darian', txt);
-  jumpToDate(darToEarth(dNavYear,dNavMonth,dSelSol));
-  const ed = darToEarth(dNavYear,dNavMonth,dSelSol);
-  setSelInfo('earth', `${EARTH_DAYS_FULL[ed.getUTCDay()]}, ${ed.getUTCDate()} de ${EARTH_MONTHS[ed.getUTCMonth()]} de ${ed.getUTCFullYear()}`);
-  const sil = darToSilin(dNavYear,dNavMonth,dSelSol);
-  setSelInfo('mars', `${MARS_DAYS_FULL[sil.weekday]}, Sol ${sil.sol} de ${MARS_MONTHS[sil.month-1]}, MY ${sil.year}`);
+  jumpMars(darToEarth(dNavYear,dNavMonth,dSelSol));
 }
 
 function onLSTClick(lune){
@@ -2603,7 +2690,7 @@ function onLSTClick(lune){
   const txt = lstSelLune ? `Lunación ${lstNavLunation}, Lúnio ${lstSelLune}` : null;
   setSelInfo('lst', txt);
   const secFromEpoch = ((lstNavLunation - 1) * LUNATION_SEC) + ((lstSelLune - 1) * LUNE_SEC);
-  jumpToDate(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
+  jumpMoon(new Date(LST_EPOCH_MS + secFromEpoch * 1000));
 }
 
 /* ══════════════════════════════════════════════
@@ -2620,19 +2707,24 @@ function setSelInfo(panel, txt){
    NOW BUTTONS
 ══════════════════════════════════════════════ */
 function goEarthNow(){
-  eNavLive = true; mNavLive = true; dNavLive = true; lstNavLive = true;
-  eSelDay = null; mSelSol = null; dSelSol = null; lstSelLune = null;
-  setSelInfo('earth',null); setSelInfo('mars',null); setSelInfo('darian',null); setSelInfo('lst',null);
-  resetToRealTime();
+  earthFrozen = false; earthFrozenAt = null; eNavLive = true;
+  eSelDay = null; setSelInfo('earth',null);
+  if(syncMode){ moonFrozen = false; marsFrozen = false; moonFrozenAt = null; marsFrozenAt = null; }
 }
 function goMarsNow(){
-  goEarthNow();
+  marsFrozen = false; marsFrozenAt = null; mNavLive = true;
+  mSelSol = null; setSelInfo('mars',null);
 }
 function goDarianNow(){
-  goEarthNow();
+  marsFrozen = false; marsFrozenAt = null; dNavLive = true;
+  dSelSol = null; setSelInfo('darian',null);
 }
 function goLSTNow(){
-  goEarthNow();
+  moonFrozen = false; moonFrozenAt = null; lstNavLive = true;
+  lstSelLune = null; setSelInfo('lst',null);
+}
+function goLTCNow(){
+  moonFrozen = false; moonFrozenAt = null; lstNavLive = true;
 }
 
 /* ══════════════════════════════════════════════
@@ -2645,7 +2737,14 @@ function toggleSync(){
   ['panel-earth','panel-lunar','panel-mars','panel-darian'].forEach(id => {
     document.getElementById(id).classList.toggle('synced', syncMode);
   });
-  if(syncMode) syncAllCalendarsToSim();
+  if(syncMode){
+    moonFrozenAt = earthFrozenAt; marsFrozenAt = earthFrozenAt;
+    moonFrozen = earthFrozen; marsFrozen = earthFrozen;
+    if(!earthFrozen){ moonFrozen = false; marsFrozen = false; }
+  } else {
+    moonFrozen = false; marsFrozen = false;
+    moonFrozenAt = null; marsFrozenAt = null;
+  }
 }
 
 function updateGridLayout(){
@@ -2661,11 +2760,9 @@ function setMarsMode(mode){
   const showSilin = mode === 'silin';
   const showDarian = mode === 'darian';
   const showRovers = mode !== 'none';
-  const showPois = mode !== 'none';
   document.getElementById('panel-mars').style.display = showSilin ? '' : 'none';
   document.getElementById('panel-darian').style.display = showDarian ? '' : 'none';
   document.getElementById('panel-rovers').style.display = showRovers ? '' : 'none';
-  document.getElementById('panel-mars-pois').style.display = showPois ? '' : 'none';
 
   const btnEarth = document.getElementById('btn-mode-earth');
   const btnSilin = document.getElementById('btn-mode-silin');
@@ -2676,7 +2773,42 @@ function setMarsMode(mode){
   btnEarth.classList.toggle('active-e', mode === 'none');
   btnSilin.classList.toggle('active-m', showSilin);
   btnDarian.classList.toggle('active-d', showDarian);
+  updatePOISection();
   updateGridLayout();
+}
+function renderPOISelector(p){
+  if(p === 'earth'){
+    return `<div class="poi-meta">
+      <div>Observador activo: ${earthObserverLat.toFixed(2)}°, ${earthObserverLon.toFixed(2)}°</div>
+      <div>Zona actual: UTC${selectedUtcOffset>=0?'+':''}${selectedUtcOffset}</div>
+    </div>`;
+  }
+  if(p === 'moon'){
+    return `<div style="display:grid;gap:.45rem">
+      <input class="city-search-input" placeholder="Buscar POI lunar..." oninput="onMoonPoiSearch(this.value)" />
+      <select id="lunar-poi-select-bottom" class="tz-select" onchange="onLunarPoiChange(this.value)"></select>
+      <div class="poi-card" id="lunar-poi-card"></div>
+    </div>`;
+  }
+  return `<div style="display:grid;gap:.45rem">
+    <input class="city-search-input" placeholder="Buscar POI marciano..." oninput="onMarsPoiSearch(this.value)" />
+    <select id="mars-poi-select-bottom" class="tz-select" onchange="onMarsPoiChange(this.value)"></select>
+    <div class="poi-card" id="mars-poi-card-bottom"></div>
+  </div>`;
+}
+function updatePOISection() {
+  const sec = document.getElementById('poi-section');
+  if (!sec) return;
+  const panels = ['earth','moon'];
+  if (marsMode !== 'none') panels.push('mars');
+  sec.innerHTML = panels.map(p => `
+    <div class="poi-block poi-block-${p}" style="flex:1;min-width:260px">
+      <div class="poi-block-header"><span class="poi-block-title">${p === 'earth' ? 'Tierra' : p === 'moon' ? 'Luna' : 'Marte'} — Puntos de interés</span></div>
+      <div class="poi-block-body" id="poi-body-${p}">${renderPOISelector(p)}</div>
+    </div>
+  `).join('');
+  initMarsPoiSelect();
+  initLunarPoiSelect();
 }
 
 function toggleTheme(){
@@ -2693,16 +2825,44 @@ function toggleTheme(){
 
 function initTzSelect(){
   const sel = document.getElementById('tz-select');
-  const cities = [...EARTH_UTC_CITIES].sort((a,b)=>a.offset-b.offset);
-  cities.forEach(c => {
-    const op=document.createElement('option');
-    op.value=c.offset;
-    const hh = Math.floor(Math.abs(c.offset));
-    const mm = Math.round((Math.abs(c.offset)-hh)*60);
-    op.textContent=`UTC${c.offset>=0?'+':'-'}${hh}${mm?`:${pad(mm)}`:''} · ${c.name}`;
-    if(c.offset===-5)op.selected=true;
-    sel.appendChild(op);
-  });
+  if(!sel) return;
+  sel.value = String(selectedUtcOffset);
+}
+let citySearchMatches = [];
+function onCitySearch(query) {
+  const dd = document.getElementById('city-dropdown');
+  if (!dd || !query || query.length < 2) { if(dd) dd.style.display = 'none'; return; }
+  const q = normalizeSearchString(query);
+  citySearchMatches = EARTH_CITIES.filter(c =>
+    normalizeSearchString(c.name).includes(q) ||
+    normalizeSearchString(c.country).includes(q)
+  ).slice(0, 8);
+  if (!citySearchMatches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = citySearchMatches.map((c, i) =>
+    `<div class="city-item" onclick="selectCity(${i})">
+      <span class="city-item-name">${c.name}</span>
+      <span class="city-item-country">${c.country} · UTC${c.utc >= 0 ? '+' : ''}${c.utc}</span>
+    </div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+function selectCity(i) {
+  const city = citySearchMatches[i];
+  if(!city) return;
+  earthObserverLat = city.lat;
+  earthObserverLon = city.lon;
+  const sel = document.getElementById('tz-select');
+  if (sel) {
+    for (let j = 0; j < sel.options.length; j++) {
+      if (parseFloat(sel.options[j].value) === city.utc) { sel.selectedIndex = j; break; }
+    }
+  }
+  selectedUtcOffset = city.utc;
+  const inp = document.getElementById('city-search');
+  if(inp) inp.value = city.name + ' (' + city.country + ')';
+  const dd = document.getElementById('city-dropdown');
+  if(dd) dd.style.display = 'none';
+  onTzChange();
 }
 
 function initMarsTzSelect(){
@@ -2746,7 +2906,7 @@ function onTzChange(){
   document.getElementById('earth-altpress').textContent = `Altitud: ${(city.altM || 0).toLocaleString('es-MX')} m snm · Presión: ${pressure.toFixed(3)} atm`;
   const hsub = document.getElementById('hblock-earth-sub');
   if(hsub) hsub.textContent = geoLat === null ? `${label} · ${city.name}` : `${label} · ${geoLat.toFixed(2)}, ${geoLon.toFixed(2)}`;
-  renderEarth(SIM_NOW);
+  renderEarth(earthTime);
 }
 
 function requestGeolocation() {
@@ -2765,7 +2925,7 @@ function requestGeolocation() {
       const sel = document.getElementById('tz-select');
       if (sel) {
         for (let i = 0; i < sel.options.length; i++) {
-          if (parseInt(sel.options[i].value, 10) === selectedUtcOffset) {
+          if (parseFloat(sel.options[i].value) === selectedUtcOffset) {
             sel.selectedIndex = i;
             break;
           }
@@ -2786,16 +2946,18 @@ function requestGeolocation() {
 }
 
 function initMarsPoiSelect(){
-  const sel = document.getElementById('mars-poi-select');
-  if(!sel) return;
-  sel.innerHTML = '';
-  MARS_POIS.forEach((p, i) => {
-    const op = document.createElement('option');
-    op.value = String(i);
-    op.textContent = p.name;
-    sel.appendChild(op);
+  ['mars-poi-select','mars-poi-select-bottom'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '';
+    MARS_POIS.forEach((p, i) => {
+      const op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = p.name;
+      sel.appendChild(op);
+    });
+    sel.value = String(selectedMarsPoi);
   });
-  sel.value = String(selectedMarsPoi);
 }
 function onMarsPoiChange(value){
   selectedMarsPoi = Math.max(0, Math.min(MARS_POIS.length-1, Number(value)||0));
@@ -2806,18 +2968,38 @@ function onMarsPoiChange(value){
     marsHorizonSource = 'poi';
   }
   updateHorizonMarsSubtitle();
+  const sel = document.getElementById('mars-poi-select-bottom');
+  if(sel) sel.value = String(selectedMarsPoi);
+}
+function onMarsPoiSearch(query){
+  const sel = document.getElementById('mars-poi-select-bottom');
+  if(!sel) return;
+  const q = normalizeSearchString((query || '').trim());
+  sel.innerHTML = '';
+  MARS_POIS.forEach((p, i) => {
+    const n = normalizeSearchString(p.name);
+    if(!q || n.includes(q)){
+      const op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = p.name;
+      sel.appendChild(op);
+    }
+  });
+  if(sel.options.length) onMarsPoiChange(sel.options[0].value);
 }
 function initLunarPoiSelect(){
-  const sel = document.getElementById('lunar-poi-select');
-  if(!sel) return;
-  sel.innerHTML = '';
-  LUNAR_POIS.forEach((p, i) => {
-    const op = document.createElement('option');
-    op.value = String(i);
-    op.textContent = p.name;
-    sel.appendChild(op);
+  ['lunar-poi-select','lunar-poi-select-bottom'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '';
+    LUNAR_POIS.forEach((p, i) => {
+      const op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = p.name;
+      sel.appendChild(op);
+    });
+    sel.value = String(selectedLunarPoi);
   });
-  sel.value = String(selectedLunarPoi);
 }
 function onLunarPoiChange(value){
   selectedLunarPoi = Math.max(0, Math.min(LUNAR_POIS.length-1, Number(value)||0));
@@ -2828,6 +3010,24 @@ function onLunarPoiChange(value){
     const sub = document.getElementById('hblock-moon-sub');
     if(sub) sub.textContent = poi.name;
   }
+  const sel = document.getElementById('lunar-poi-select-bottom');
+  if(sel) sel.value = String(selectedLunarPoi);
+}
+function onMoonPoiSearch(query){
+  const sel = document.getElementById('lunar-poi-select-bottom');
+  if(!sel) return;
+  const q = normalizeSearchString((query || '').trim());
+  sel.innerHTML = '';
+  LUNAR_POIS.forEach((p, i) => {
+    const n = normalizeSearchString(p.name);
+    if(!q || n.includes(q)){
+      const op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = p.name;
+      sel.appendChild(op);
+    }
+  });
+  if(sel.options.length) onLunarPoiChange(sel.options[0].value);
 }
 function initGravitySelects(){
   const bind = (id, items, selectedId) => {
@@ -3021,7 +3221,7 @@ function renderEarth(now){
   document.getElementById('earth-doy').textContent=getDOY(tY,tM,tD);
   document.getElementById('earth-week').textContent='S'+pad(getISOWeek(local));
   drawClock('canvas-earth',tH,tMin,tS,isLight ? EP_LIGHT : EP);
-  document.getElementById('digital-earth').textContent=pad(tH)+':'+pad(tMin)+':'+pad(tS);
+  document.getElementById('digital-earth').textContent=`${formatHour(tH,'earth')}:${pad(tMin)}:${pad(tS)}`;
   const seasonN = getEarthSeason(now, 'N');
   const seasonS = getEarthSeason(now, 'S');
   document.getElementById('earth-season').textContent = `N: ${seasonN} · S: ${seasonS}`;
@@ -3066,15 +3266,12 @@ function renderLST(now){
   document.getElementById('lst-lunour').textContent = pad(lst.lunour);
   document.getElementById('lst-centilunour').textContent = pad(lst.centilunour);
   document.getElementById('lst-millilunour').textContent = lst.millilunour;
-  document.getElementById('digital-lst').textContent = pad(lst.lunour)+':'+pad(lst.centilunour)+'.'+lst.millilunour;
-  document.getElementById('lst-time').textContent = pad(lst.lunour)+':'+pad(lst.centilunour)+'.'+lst.millilunour;
+  document.getElementById('digital-lst').textContent = `${formatHour(lst.lunour,'lst')}:${pad(lst.centilunour)}.${lst.millilunour}`;
+  document.getElementById('lst-time').textContent = `${formatHour(lst.lunour,'lst')}:${pad(lst.centilunour)}.${lst.millilunour}`;
   document.getElementById('lst-lunation-info').textContent = lst.lunation;
   document.getElementById('lst-lune-info').textContent = lst.lune;
   document.getElementById('lst-ml-val').textContent = mlSec;
   document.getElementById('lst-pct').textContent = `+${slowerPct}%`;
-  const lunInput = document.getElementById('lst-lun-input');
-  if(lunInput && document.activeElement !== lunInput) lunInput.value = String(lstNavLunation || lst.lunation);
-
   drawLSTClock('canvas-lst', lst.lunour, lst.centilunour, lst.millilunour, isLight ? LST_LIGHT : LST_DARK);
   document.getElementById('lst-now-btn').classList.toggle('away', !lstNavLive);
 
@@ -3089,7 +3286,7 @@ function renderLTC(now){
   const h = ltcDate.getUTCHours(), m = ltcDate.getUTCMinutes(), s = ltcDate.getUTCSeconds();
   const isLight = document.body.classList.contains('light');
   drawClock('canvas-ltc', h, m, s, isLight ? LST_LIGHT : LST_DARK);
-  document.getElementById('digital-ltc').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  document.getElementById('digital-ltc').textContent = `${formatHour(h,'ltc')}:${pad(m)}:${pad(s)}`;
   document.getElementById('ltc-date').textContent = `${pad(ltcDate.getUTCDate())}/${pad(ltcDate.getUTCMonth()+1)}/${ltcDate.getUTCFullYear()} UTC-LTC`;
   document.getElementById('ltc-offset').textContent = `${Math.round(offsetMs).toLocaleString('es-MX')} ms`;
 }
@@ -3135,7 +3332,7 @@ function renderMarsPoi(now){
   const tempC = estimateMarsTempC(ls, localMtc);
   const sunriseLocal = 6;
   const sunsetLocal = 18;
-  const card = document.getElementById('mars-poi-card');
+  const card = document.getElementById('mars-poi-card-bottom');
   if(!card) return;
   card.replaceChildren();
   const h4 = document.createElement('h4');
@@ -3172,6 +3369,16 @@ function renderLunarPoi(now){
   document.getElementById('lunar-poi-temp').textContent = `~${temp>0?'+':''}${temp}°C ${tempLabel}`;
   document.getElementById('lunar-poi-coords').textContent = `${poi.name} · ${formatLat(poi.lat)} ${formatLon(poi.lon)}`;
   document.getElementById('lunar-poi-altpress').textContent = `Alt: ${poi.altitudeM>=0?'+':''}${poi.altitudeM.toLocaleString('es-MX')} m (datum lunar) · Presión: vacío (10⁻¹⁰ Pa)`;
+  const card = document.getElementById('lunar-poi-card');
+  if(card){
+    card.innerHTML = `<h4>${poi.name}</h4><div class="poi-meta">
+      <div>${poi.desc}</div>
+      <div>Coord.: ${formatLat(poi.lat)} ${formatLon(poi.lon)}</div>
+      <div>Hora local solar: ${pad(t.h)}:${pad(t.m)}:${pad(t.s)}</div>
+      <div>Estado: ${isPole ? 'Sombra permanente polar' : (isDay ? 'Día lunar' : 'Noche lunar')}</div>
+      <div>Temperatura: ~${temp>0?'+':''}${temp}°C ${tempLabel}</div>
+    </div>`;
+  }
   const lunarGr = LUNAR_GRAVITY_REGIONS.find(r => r.id === selectedLunarGrav) || LUNAR_GRAVITY_REGIONS[0];
   updateGravityDisplay('lunar', lunarGr.g);
 }
@@ -3234,35 +3441,34 @@ function renderDar(now){
    MAIN TICK
 ══════════════════════════════════════════════ */
 function tick(){
-  tickSimTime();
-  const now = SIM_NOW;
-  renderEarth(now);
-  renderLST(now);
-  renderLTC(now);
-  renderRovers(now);
-  renderMarsPoi(now);
-  renderLunarPoi(now);
-  updateHorizons(now);
+  tickTimes();
+  renderEarth(earthTime);
+  renderLST(moonTime);
+  renderLTC(moonTime);
+  renderRovers(marsTime);
+  renderMarsPoi(marsTime);
+  renderLunarPoi(moonTime);
+  updateHorizons();
   document.getElementById('lunar-season').textContent = 'Sin estaciones (eje ~1.54°)';
   document.getElementById('lunar-axis').textContent = '1.54° respecto a la eclíptica';
 
   // Mars clocks -- only active panel
-  const msd=getMSD(now), mtcH=getMTC(msd);
+  const msd=getMSD(marsTime), mtcH=getMTC(msd);
   const marsHours = selectedMarsOffset === 'utc'
-    ? now.getUTCHours() + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600
+    ? marsTime.getUTCHours() + marsTime.getUTCMinutes()/60 + marsTime.getUTCSeconds()/3600
     : wrap24(mtcH + selectedMarsOffset);
   const {h,m,s}=mtcToHMS(marsHours);
   const isLight = document.body.classList.contains('light');
   if(marsMode === 'silin'){
-    document.getElementById('digital-mars').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    document.getElementById('digital-mars').textContent = `${formatHour(h,'mars')}:${pad(m)}:${pad(s)}`;
     drawClock('canvas-mars', h, m, s, isLight ? MP_LIGHT : MP);
-    if(mNavLive){ const sil=silinFromTotalSols(solsFromEpoch(now)); mNavYear=sil.year; mNavMonth=sil.month; }
-    renderMars(now);
+    if(mNavLive){ const sil=silinFromTotalSols(solsFromEpoch(marsTime)); mNavYear=sil.year; mNavMonth=sil.month; }
+    renderMars(marsTime);
   } else if(marsMode === 'darian'){
-    document.getElementById('digital-darian').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    document.getElementById('digital-darian').textContent = `${formatHour(h,'darian')}:${pad(m)}:${pad(s)}`;
     drawClock('canvas-darian', h, m, s, isLight ? DP2_LIGHT : DP2);
-    if(dNavLive){ const dar=darFromTotalSols(solsFromEpoch(now)); dNavYear=dar.year; dNavMonth=dar.month; }
-    renderDar(now);
+    if(dNavLive){ const dar=darFromTotalSols(solsFromEpoch(marsTime)); dNavYear=dar.year; dNavMonth=dar.month; }
+    renderDar(marsTime);
   }
   updateSimDatetimeInput();
   updateFineInputs();
@@ -3341,7 +3547,11 @@ function renderDP(){
     document.getElementById('dp-dec-prev').disabled = (dpDecSt<=1);
     document.getElementById('dp-dec-next').disabled = (dpDecSt+12>maxY);
     let html = '<div class="dp-grid dp-grid-yr">';
-    for(let y=dpDecSt; y<=end; y++){
+    for(let y=dpDecSt; y<dpDecSt+12; y++){
+      if(y > maxY){
+        html += '<div class="dp-cell dp-cell-hidden" aria-hidden="true"></div>';
+        continue;
+      }
       const isC = (y===dpYear);
       html += `<div class="dp-cell${isC?' dp-cur '+acCls:''}" onclick="dpPickYear(${y})">${y}</div>`;
     }
@@ -3374,19 +3584,15 @@ function dpPickYear(y){
 }
 
 function dpPickMonth(m){
-  const now = SIM_NOW;
   if(dpPanel==='earth'){
     eNavYear=dpYear; eNavMonth=m; eSelDay=null; eNavLive=false;
-    setSelInfo('earth',null); renderEarth(now);
-    if(syncMode) syncFromEarth(dpYear,m,1,false);
+    setSelInfo('earth',null); renderEarth(earthTime);
   } else if(dpPanel==='mars'){
     mNavYear=dpYear; mNavMonth=m; mSelSol=null; mNavLive=false;
-    setSelInfo('mars',null); renderMars(now);
-    if(syncMode) syncFromSilin(dpYear,m,1,false);
+    setSelInfo('mars',null); renderMars(marsTime);
   } else {
     dNavYear=dpYear; dNavMonth=m; dSelSol=null; dNavLive=false;
-    setSelInfo('darian',null); renderDar(now);
-    if(syncMode) syncFromDar(dpYear,m,1,false);
+    setSelInfo('darian',null); renderDar(marsTime);
   }
   closeDP();
 }
@@ -3400,12 +3606,20 @@ document.addEventListener('click', function(e){
   if(triggerIds.some(id => document.getElementById(id) === e.target)) return;
   closeDP();
 }, true);
+document.addEventListener('click', e => {
+  if (!e.target.closest('.city-search-wrap')) {
+    const dd = document.getElementById('city-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+  if (!e.target.closest('#lun-picker') && e.target.id !== 'lst-cal-title') closeLunationPicker();
+});
 
 /* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 (function init(){
-  const now = SIM_NOW;
+  tickTimes();
+  const now = earthTime;
   initTzSelect();
   initMarsTzSelect();
   initMarsPoiSelect();
@@ -3417,6 +3631,7 @@ document.addEventListener('click', function(e){
   updateHorizonMarsSubtitle();
   ['horizon-earth','horizon-mars','horizon-moon'].forEach(resizeHorizonCanvas);
   setLunarMode('lst');
+  updatePOISection();
   eNavYear = now.getUTCFullYear(); eNavMonth = now.getUTCMonth()+1;
   const sil = silinFromTotalSols(solsFromEpoch(now));
   mNavYear = sil.year; mNavMonth = sil.month;
