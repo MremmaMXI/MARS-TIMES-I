@@ -268,6 +268,19 @@ body.light .tz-select{background:#f0f2ff}
 .rover-meta{margin-top:.45rem;font-size:.72rem;color:var(--sub);display:grid;gap:.2rem}
 .rover-meta strong{color:var(--text)}
 .rover-coords{font-size:.75rem;color:var(--text)}
+.aux-info{
+  width:100%;font-size:.72rem;color:var(--sub);border:1px solid var(--border);
+  border-radius:10px;padding:.55rem .65rem;background:rgba(255,255,255,.03);z-index:1;
+  display:grid;gap:.25rem
+}
+.aux-info strong{color:var(--text)}
+.aux-info .axis{font-size:.69rem}
+.poi-card{
+  border:1px solid var(--border);border-radius:12px;padding:.7rem;background:rgba(255,255,255,.03);
+  font-size:.74rem;color:var(--sub);display:grid;gap:.3rem
+}
+.poi-card h4{font-size:.86rem;color:var(--text)}
+.poi-meta{display:grid;gap:.18rem}
 
 /* ═══════════════════════════════════════
    DATE PICKER POPOVER
@@ -383,6 +396,7 @@ body.light canvas.clock-face{background:transparent;}
 
   .mars-sec-ref, .lst-sec-ref{ font-size:.64rem; }
   .rovers-head{flex-direction:column;align-items:flex-start}
+  .aux-info,.poi-card{font-size:.7rem}
 
   .dp-popover{ min-width:190px; padding:.6rem; }
   .dp-cell{ font-size:.66rem; padding:.28rem .06rem; }
@@ -401,7 +415,7 @@ body.light canvas.clock-face{background:transparent;}
 
 <header>
   <h1>Calendario Tierra - Luna &amp; Marciano</h1>
-  <p>MTC con zonas marcianas · Rovers en tiempo real · LST Franklin + LTC NASA · MY 1 = 11 abr 1955</p>
+  <p>MTC + UTC rover · Rovers y POIs · LST Franklin + LTC NASA · Estaciones, ejes y temperaturas · MY 1 = 11 abr 1955</p>
 </header>
 
 <div class="sync-bar">
@@ -456,6 +470,11 @@ body.light canvas.clock-face{background:transparent;}
     </div>
     <div class="mini-cal"><table id="cal-earth-table"></table></div>
     <div class="sel-info" id="earth-sel-info"></div>
+    <div class="aux-info" id="earth-aux">
+      <div>Estación: <strong id="earth-season">—</strong></div>
+      <div class="axis">Eje: <strong id="earth-axis">23.44° respecto a la eclíptica</strong></div>
+      <div>🌡️ <strong id="earth-temp">—</strong></div>
+    </div>
     <div class="info-row">
       <span>JDN: <strong id="earth-jdn">—</strong></span>
       <span>Día del año: <strong id="earth-doy">—</strong></span>
@@ -472,6 +491,10 @@ body.light canvas.clock-face{background:transparent;}
     <div class="lunar-mode-tabs">
       <button class="lun-tab active" id="tab-lst" onclick="setLunarMode('lst')">LST Franklin</button>
       <button class="lun-tab" id="tab-ltc" onclick="setLunarMode('ltc')">LTC NASA</button>
+    </div>
+    <div class="tz-bar">
+      <span class="tz-label">Punto lunar:</span>
+      <select id="lunar-poi-select" class="tz-select" onchange="onLunarPoiChange(this.value)"></select>
     </div>
     <div id="lunar-lst-view" class="lunar-view">
       <div class="clock-wrap">
@@ -537,6 +560,14 @@ body.light canvas.clock-face{background:transparent;}
         <span>Referencia: <strong id="ltc-ref">J2000</strong></span>
       </div>
     </div>
+    <div class="aux-info">
+      <div>Estación: <strong id="lunar-season">Sin estaciones (eje ~1.54°)</strong></div>
+      <div class="axis">Eje: <strong id="lunar-axis">1.54° respecto a la eclíptica</strong></div>
+      <div>Hora solar local: <strong id="lunar-poi-time">—</strong></div>
+      <div>Estado: <strong id="lunar-poi-light">—</strong></div>
+      <div>🌡️ <strong id="lunar-poi-temp">—</strong></div>
+      <div>📍 <strong id="lunar-poi-coords">—</strong></div>
+    </div>
   </div>
 
   <!-- ═══════ MARTE — SILIN ═══════ -->
@@ -585,6 +616,11 @@ body.light canvas.clock-face{background:transparent;}
     </div>
     <div class="mini-cal"><table id="cal-mars-table"></table></div>
     <div class="sel-info" id="mars-sel-info"></div>
+    <div class="aux-info">
+      <div>Estación: <strong id="mars-season">—</strong></div>
+      <div class="axis">Eje: <strong id="mars-axis">25.19° respecto a la eclíptica</strong></div>
+      <div>🌡️ <strong id="mars-temp">—</strong></div>
+    </div>
     <div class="info-row">
       <span>MSD: <strong id="mars-msd">—</strong></span>
       <span>Sol año: <strong id="mars-soy">—</strong></span>
@@ -638,6 +674,11 @@ body.light canvas.clock-face{background:transparent;}
     </div>
     <div class="mini-cal"><table id="cal-darian-table"></table></div>
     <div class="sel-info" id="darian-sel-info"></div>
+    <div class="aux-info">
+      <div>Estación: <strong id="darian-season">—</strong></div>
+      <div class="axis">Eje: <strong id="darian-axis">25.19° respecto a la eclíptica</strong></div>
+      <div>🌡️ <strong id="darian-temp">—</strong></div>
+    </div>
     <div class="info-row">
       <span>MSD: <strong id="darian-msd">—</strong></span>
       <span>Sol año: <strong id="darian-soy">—</strong></span>
@@ -650,9 +691,21 @@ body.light canvas.clock-face{background:transparent;}
 <section class="rovers-panel" id="panel-rovers" style="display:none">
   <div class="rovers-head">
     <div class="badge"><span class="dot"></span>Rovers/Landers — Marte en tiempo real</div>
-    <div class="badge-sub">Sol de misión + hora MTC local por longitud marciana</div>
+    <div class="badge-sub">Sol de misión + hora MTC local + equivalente UTC terrestre</div>
   </div>
   <div class="rovers-grid" id="rovers-grid"></div>
+</section>
+
+<section class="rovers-panel" id="panel-mars-pois" style="display:none">
+  <div class="rovers-head">
+    <div class="badge"><span class="dot"></span>Puntos de Interés — Marte</div>
+    <div class="badge-sub">Hora MTC local + UTC equivalente + coordenadas + temperatura estimada</div>
+  </div>
+  <div class="tz-bar">
+    <span class="tz-label">POI:</span>
+    <select id="mars-poi-select" class="tz-select" onchange="onMarsPoiChange(this.value)"></select>
+  </div>
+  <div class="poi-card" id="mars-poi-card"></div>
 </section>
 
 <!-- ═══════ DATE PICKER POPOVER (shared) ═══════ -->
@@ -682,7 +735,8 @@ body.light canvas.clock-face{background:transparent;}
   Días Silin: Lúnares Mártes Hérmoles Zeúves Afrónes Króbado Helingo ·
   Calendario Dariano (Gangale) · 24 meses (28/27 soles) · Bisiesto: 669 soles · Común: 668 soles ·
   Días Dariano: Sol Solis Sol Lunae Sol Martis Sol Mercurii Sol Jovis Sol Veneris Sol Saturni ·
-  Luna: LST Franklin + LTC NASA (relativista) · Rovers: Perseverance, Curiosity, InSight, Opportunity, Spirit
+  Luna: LST Franklin + LTC NASA (relativista) · Rovers: Perseverance, Curiosity, InSight, Opportunity, Spirit ·
+  Fuentes: Open-Meteo (Tierra en tiempo real), modelos térmicos simplificados inspirados en NASA/JPL (Marte y Luna)
 </footer>
 
 <script>
@@ -739,6 +793,41 @@ const ROVERS = [
   { name:'Opportunity', icon:'⚫', status:'Inactivo (ref)', active:false, lat:-1.9462, lon:354.4734, region:'Meridiani Planum', landingUTC:Date.UTC(2004,0,25,0,0,0) },
   { name:'Spirit', icon:'⚫', status:'Inactivo (ref)', active:false, lat:-14.5684, lon:175.4729, region:'Gusev Crater', landingUTC:Date.UTC(2004,0,4,0,0,0) }
 ];
+const MARS_POIS = [
+  { name:'Olympus Mons', lat:18.65, lon:226.2, desc:'Volcán más alto del sistema solar' },
+  { name:'Valles Marineris', lat:-13.9, lon:301.0, desc:'Cañón más largo del sistema solar' },
+  { name:'Hellas Planitia', lat:-42.7, lon:70.0, desc:'Cráter de impacto más grande de Marte' },
+  { name:'Polar Norte (Planum Boreum)', lat:90.0, lon:0.0, desc:'Polo norte marciano' },
+  { name:'Polar Sur (Planum Australe)', lat:-90.0, lon:0.0, desc:'Polo sur marciano (agua helada)' },
+  { name:'Elysium Mons', lat:25.0, lon:147.2, desc:'Segundo volcán más grande' },
+  { name:'Arabia Terra', lat:21.0, lon:6.0, desc:'Antigua región cratérica' },
+  { name:'Tharsis Bulge', lat:0.0, lon:247.0, desc:'Meseta volcánica gigante' },
+  { name:'Cráter Korolev', lat:73.0, lon:165.0, desc:'Cráter con hielo permanente (polo norte)' },
+  { name:'Argyre Planitia', lat:-49.7, lon:316.0, desc:'Gran cuenca de impacto sur' }
+];
+const LUNAR_POIS = [
+  { name:'Mare Tranquillitatis', lat:8.5, lon:31.4, desc:'Lugar del Apollo 11' },
+  { name:'Cráter Tycho', lat:-43.3, lon:-11.2, desc:'Cráter prominente' },
+  { name:'Polo Norte Lunar', lat:90.0, lon:0.0, desc:'Zona con posible agua helada' },
+  { name:'Polo Sur Lunar (Shackleton)', lat:-89.9, lon:0.0, desc:'Objetivo de misiones Artemis' },
+  { name:'Mare Imbrium', lat:32.8, lon:-15.6, desc:'Gran mar lunar visible' },
+  { name:'Cráter Copernicus', lat:9.7, lon:-20.1, desc:'Cráter fresco brillante' },
+  { name:'Oceanus Procellarum', lat:18.4, lon:-57.4, desc:'Océano de tempestades' },
+  { name:'Mare Crisium', lat:17.0, lon:59.1, desc:'Mar de crisis (cara visible)' },
+  { name:'Far Side (Mare Moscoviense)', lat:27.3, lon:147.9, desc:'Cara oculta de la Luna' },
+  { name:'Cráter Aristarchus', lat:23.7, lon:-47.4, desc:'Zona volcánica más brillante' }
+];
+const EARTH_UTC_CITIES = [
+  { offset:-12, name:'Howland Island', lat:0.8, lon:-176.6, api:false },
+  { offset:-8, name:'Los Angeles', lat:34.05, lon:-118.24, api:true },
+  { offset:-5, name:'New York', lat:40.71, lon:-74.0, api:true },
+  { offset:0, name:'Londres', lat:51.51, lon:-0.13, api:true },
+  { offset:1, name:'París', lat:48.85, lon:2.35, api:true },
+  { offset:5.5, name:'Delhi', lat:28.67, lon:77.22, api:true },
+  { offset:8, name:'Beijing', lat:39.91, lon:116.39, api:true },
+  { offset:9, name:'Tokio', lat:35.69, lon:139.69, api:true },
+  { offset:12, name:'Auckland', lat:-36.86, lon:174.76, api:true }
+];
 
 /* ══════════════════════════════════════════════
    ESTADO
@@ -753,6 +842,12 @@ let darkMode = true;
 let selectedUtcOffset = -5;
 let selectedMarsOffset = 0;
 let lunarMode = 'lst';
+let selectedMarsPoi = 0;
+let selectedLunarPoi = 0;
+const EARTH_TEMP_CACHE_MS = 10 * 60 * 1000;
+const earthTempCache = new Map();
+const earthTempPending = new Set();
+let earthTempDisplay = 'calculando...';
 
 /* ══════════════════════════════════════════════
    UTILIDADES GENERALES
@@ -783,6 +878,89 @@ function formatMtcLabel(v){
 
 function formatLat(lat){ return `${Math.abs(lat).toFixed(4)}°${lat>=0?'N':'S'}`; }
 function formatLon(lon){ return `${Math.abs(lon).toFixed(4)}°${lon>=0?'E':'W'}`; }
+function wrap360(d){ return ((d % 360) + 360) % 360; }
+function signedLongitude(lon){
+  return ((lon + 180) % 360 + 360) % 360 - 180;
+}
+function formatOffsetHours(h){
+  const sign = h >= 0 ? '+' : '-';
+  const abs = Math.abs(h);
+  let hh = Math.floor(abs);
+  let mm = Math.round((abs - hh) * 60);
+  if(mm===60){ hh += 1; mm = 0; }
+  return `MTC${sign}${hh}:${pad(mm)}`;
+}
+function formatUTCFromHours(h){
+  const t = mtcToHMS(wrap24(h));
+  return `${pad(t.h)}:${pad(t.m)}:${pad(t.s)}`;
+}
+function mtcToEarthUtcEquivalentHours(mtcHours){
+  return wrap24((mtcHours * MARS_SOL_RATIO));
+}
+function getMarsLs(date){
+  return wrap360(getMSD(date) * 360 / 686.9713);
+}
+function getEarthSeason(utcDate, hemisphere){
+  const m = utcDate.getUTCMonth() + 1;
+  const d = utcDate.getUTCDate();
+  const md = m * 100 + d;
+  let north = '❄️ Invierno';
+  if(md >= 320 && md < 621) north = '🌱 Primavera';
+  else if(md >= 621 && md < 922) north = '☀️ Verano';
+  else if(md >= 922 && md < 1221) north = '🍂 Otoño';
+  if(hemisphere === 'N') return north;
+  if(north === '🌱 Primavera') return '🍂 Otoño';
+  if(north === '☀️ Verano') return '❄️ Invierno';
+  if(north === '🍂 Otoño') return '🌱 Primavera';
+  return '☀️ Verano';
+}
+function getMarsSeason(ls){
+  if(ls < 90) return { north:'🌱 Primavera', south:'🍂 Otoño' };
+  if(ls < 180) return { north:'☀️ Verano', south:'❄️ Invierno' };
+  if(ls < 270) return { north:'🍂 Otoño', south:'🌱 Primavera' };
+  return { north:'❄️ Invierno', south:'☀️ Verano' };
+}
+function estimateMarsTempC(ls, localHour){
+  const lsRad = ls * Math.PI / 180;
+  const day = localHour > 6 && localHour < 18;
+  if(day){
+    const peak = Math.max(0, Math.cos((localHour - 14) * Math.PI / 8));
+    return -20 + 30 * Math.cos(lsRad) + 30 * peak;
+  }
+  return -80 + 20 * Math.cos(lsRad);
+}
+function getLunarPhaseFraction(date){
+  const newMoonRef = Date.UTC(2000,0,6,18,14,0);
+  const synodicMs = 29.530588853 * 86400000;
+  return ((date.getTime() - newMoonRef) % synodicMs + synodicMs) % synodicMs / synodicMs;
+}
+function lunarSubsolarLongitude(date){
+  return ((180 - getLunarPhaseFraction(date) * 360 + 540) % 360) - 180;
+}
+function getLunarLocalSolarHours(date, lon){
+  const subSolar = lunarSubsolarLongitude(date);
+  const delta = ((lon - subSolar + 540) % 360) - 180;
+  return wrap24(12 + delta / 15);
+}
+function getLunarLightAndTemp(date, poi){
+  const localH = getLunarLocalSolarHours(date, poi.lon);
+  const isPole = Math.abs(poi.lat) >= 85;
+  const isDay = localH >= 6 && localH < 18;
+  const temp = isPole ? -240 : (isDay ? 120 : -173);
+  return { localH, isDay, isPole, temp };
+}
+function estimateEarthTempFallbackC(localHour, lat, northSeason){
+  const seasonBase = northSeason.startsWith('☀️') ? 18 : northSeason.startsWith('❄️') ? 4 : 12;
+  const latPenalty = Math.abs(lat) * 0.22;
+  const daySwing = 7 * Math.cos((localHour - 14) * Math.PI / 12);
+  return seasonBase + daySwing - latPenalty;
+}
+function getEarthCityForOffset(offset){
+  const exact = EARTH_UTC_CITIES.find(c => c.offset === offset);
+  if(exact) return exact;
+  return EARTH_UTC_CITIES.reduce((best, c) =>
+    (Math.abs(c.offset - offset) < Math.abs(best.offset - offset) ? c : best), EARTH_UTC_CITIES[0]);
+}
 
 function solsFromEpoch(date){
   return (date.getTime() - SILIN_EPOCH_MS) / 86400000 / MARS_SOL_RATIO;
@@ -1376,9 +1554,11 @@ function setMarsMode(mode){
   const showSilin = mode === 'silin';
   const showDarian = mode === 'darian';
   const showRovers = mode !== 'none';
+  const showPois = mode !== 'none';
   document.getElementById('panel-mars').style.display = showSilin ? '' : 'none';
   document.getElementById('panel-darian').style.display = showDarian ? '' : 'none';
   document.getElementById('panel-rovers').style.display = showRovers ? '' : 'none';
+  document.getElementById('panel-mars-pois').style.display = showPois ? '' : 'none';
 
   const btnEarth = document.getElementById('btn-mode-earth');
   const btnSilin = document.getElementById('btn-mode-silin');
@@ -1405,14 +1585,19 @@ function toggleTheme(){
 }
 
 function initTzSelect(){
-  const sel=document.getElementById('tz-select');
-  for(let o=-12;o<=14;o++){
+  const sel = document.getElementById('tz-select');
+  const offsets = [];
+  for(let o=-12;o<=14;o++) offsets.push(o);
+  offsets.push(5.5);
+  offsets.sort((a,b)=>a-b).forEach(o => {
     const op=document.createElement('option');
     op.value=o;
-    op.textContent='UTC'+(o>=0?'+':'')+o;
+    const hh = Math.floor(Math.abs(o));
+    const mm = Math.round((Math.abs(o)-hh)*60);
+    op.textContent='UTC'+(o>=0?'+':'-')+hh+(mm?`:${pad(mm)}`:'');
     if(o===-5)op.selected=true;
     sel.appendChild(op);
-  }
+  });
 }
 
 function initMarsTzSelect(){
@@ -1435,10 +1620,46 @@ function initMarsTzSelect(){
 }
 
 function onTzChange(){
-  selectedUtcOffset=parseInt(document.getElementById('tz-select').value);
-  const s=selectedUtcOffset>=0?'+':'';
-  document.querySelector('#panel-earth .badge').innerHTML='<span class="dot"></span>Tierra — UTC'+s+selectedUtcOffset;
+  selectedUtcOffset=parseFloat(document.getElementById('tz-select').value);
+  const sign = selectedUtcOffset>=0?'+':'-';
+  const abs = Math.abs(selectedUtcOffset);
+  let hh = Math.floor(abs);
+  let mm = Math.round((abs-hh)*60);
+  if(mm===60){ hh += 1; mm = 0; }
+  const label = `UTC${sign}${hh}${mm?`:${pad(mm)}`:''}`;
+  document.querySelector('#panel-earth .badge').innerHTML='<span class="dot"></span>Tierra — '+label;
   renderEarth(new Date());
+}
+
+function initMarsPoiSelect(){
+  const sel = document.getElementById('mars-poi-select');
+  if(!sel) return;
+  sel.innerHTML = '';
+  MARS_POIS.forEach((p, i) => {
+    const op = document.createElement('option');
+    op.value = String(i);
+    op.textContent = p.name;
+    sel.appendChild(op);
+  });
+  sel.value = String(selectedMarsPoi);
+}
+function onMarsPoiChange(value){
+  selectedMarsPoi = Math.max(0, Math.min(MARS_POIS.length-1, Number(value)||0));
+}
+function initLunarPoiSelect(){
+  const sel = document.getElementById('lunar-poi-select');
+  if(!sel) return;
+  sel.innerHTML = '';
+  LUNAR_POIS.forEach((p, i) => {
+    const op = document.createElement('option');
+    op.value = String(i);
+    op.textContent = p.name;
+    sel.appendChild(op);
+  });
+  sel.value = String(selectedLunarPoi);
+}
+function onLunarPoiChange(value){
+  selectedLunarPoi = Math.max(0, Math.min(LUNAR_POIS.length-1, Number(value)||0));
 }
 
 function onMarsTzChange(value){
@@ -1462,6 +1683,50 @@ function setLunarMode(mode){
   document.querySelector('#panel-lunar .badge').innerHTML = `<span class="dot"></span>Luna — ${mode==='lst'?'LST':'LTC'}`;
 }
 
+async function refreshEarthTemperature(now){
+  const exactCity = EARTH_UTC_CITIES.find(c => c.offset === selectedUtcOffset);
+  const city = getEarthCityForOffset(selectedUtcOffset);
+  const localHour = wrap24(now.getUTCHours() + selectedUtcOffset + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600);
+  const northSeason = getEarthSeason(now, 'N');
+  const fallbackC = estimateEarthTempFallbackC(localHour, city.lat, northSeason);
+  const fallbackTxt = `${Math.round(fallbackC)}°C / ${Math.round(fallbackC*9/5+32)}°F (estimado ${city.name})`;
+  if(!city.api){
+    earthTempDisplay = `${fallbackTxt} · sin API`;
+    return;
+  }
+  const key = `${city.name}:${city.lat.toFixed(2)},${city.lon.toFixed(2)}`;
+  const cached = earthTempCache.get(key);
+  if(cached && (now.getTime() - cached.time < EARTH_TEMP_CACHE_MS)){
+    const nearestHour = wrap24(now.getUTCHours() + city.offset + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600);
+    const nearestFallback = estimateEarthTempFallbackC(nearestHour, city.lat, northSeason);
+    const adjusted = exactCity ? cached.tempC : (cached.tempC + (fallbackC - nearestFallback));
+    earthTempDisplay = `${Math.round(adjusted)}°C / ${Math.round(adjusted*9/5+32)}°F (en tiempo real, ${city.name})`;
+    return;
+  }
+  if(earthTempPending.has(key)){
+    if(!cached) earthTempDisplay = fallbackTxt;
+    return;
+  }
+  earthTempPending.add(key);
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m&timezone=UTC`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('open-meteo non-200');
+    const data = await res.json();
+    const tempC = Number(data?.current?.temperature_2m);
+    if(Number.isNaN(tempC)) throw new Error('open-meteo payload');
+    earthTempCache.set(key, { tempC, time: now.getTime() });
+    const nearestHour = wrap24(now.getUTCHours() + city.offset + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600);
+    const nearestFallback = estimateEarthTempFallbackC(nearestHour, city.lat, northSeason);
+    const adjusted = exactCity ? tempC : (tempC + (fallbackC - nearestFallback));
+    earthTempDisplay = `${Math.round(adjusted)}°C / ${Math.round(adjusted*9/5+32)}°F (en tiempo real, ${city.name})`;
+  } catch(_e){
+    earthTempDisplay = `${fallbackTxt} · fallback`;
+  } finally {
+    earthTempPending.delete(key);
+  }
+}
+
 /* ══════════════════════════════════════════════
    RENDER EARTH
 ══════════════════════════════════════════════ */
@@ -1478,6 +1743,12 @@ function renderEarth(now){
   document.getElementById('earth-week').textContent='S'+pad(getISOWeek(local));
   drawClock('canvas-earth',tH,tMin,tS,isLight ? EP_LIGHT : EP);
   document.getElementById('digital-earth').textContent=pad(tH)+':'+pad(tMin)+':'+pad(tS);
+  const seasonN = getEarthSeason(now, 'N');
+  const seasonS = getEarthSeason(now, 'S');
+  document.getElementById('earth-season').textContent = `N: ${seasonN} · S: ${seasonS}`;
+  document.getElementById('earth-axis').textContent = '23.44° respecto a la eclíptica (casi constante)';
+  document.getElementById('earth-temp').textContent = earthTempDisplay;
+  refreshEarthTemperature(now);
   document.getElementById('earth-now-btn').classList.toggle('away',!eNavLive);
   if(eNavLive){eNavYear=tY;eNavMonth=tM;}
   buildEarthCal(eNavYear,eNavMonth,tY,tM,tD,eSelDay);
@@ -1538,8 +1809,10 @@ function renderRovers(now){
   if(marsMode === 'none') return;
   const mtcH = getMTC(getMSD(now));
   const html = ROVERS.map(r => {
-    const localMtc = wrap24(mtcH + (r.lon/15));
+    const offset = signedLongitude(r.lon)/15;
+    const localMtc = wrap24(mtcH + offset);
     const t = mtcToHMS(localMtc);
+    const utcEq = mtcToHMS(mtcToEarthUtcEquivalentHours(localMtc));
     const missionSols = Math.max(0, Math.floor((now.getTime() - r.landingUTC) / (MARS_SOL_RATIO * 86400000)));
     const stCls = r.active ? 'active' : 'inactive';
     return `<article class="rover-card">
@@ -1552,10 +1825,44 @@ function renderRovers(now){
         <div>${r.region}</div>
         <div>Sol misión: <strong>${missionSols}</strong></div>
         <div>MTC local: <strong>${pad(t.h)}:${pad(t.m)}:${pad(t.s)}</strong></div>
+        <div><strong>${formatOffsetHours(offset)}</strong> ≡ <strong>UTC ${pad(utcEq.h)}:${pad(utcEq.m)}:${pad(utcEq.s)}</strong></div>
       </div>
     </article>`;
   }).join('');
   document.getElementById('rovers-grid').innerHTML = html;
+}
+
+function renderMarsPoi(now){
+  if(marsMode === 'none') return;
+  const poi = MARS_POIS[selectedMarsPoi] || MARS_POIS[0];
+  const mtcH = getMTC(getMSD(now));
+  const ls = getMarsLs(now);
+  const offset = signedLongitude(poi.lon)/15;
+  const localMtc = wrap24(mtcH + offset);
+  const local = mtcToHMS(localMtc);
+  const utcEq = mtcToHMS(mtcToEarthUtcEquivalentHours(localMtc));
+  const seasons = getMarsSeason(ls);
+  const tempC = estimateMarsTempC(ls, localMtc);
+  document.getElementById('mars-poi-card').innerHTML = `
+    <h4>${poi.name}</h4>
+    <div class="poi-meta">
+      <div>📍 ${formatLat(poi.lat)} ${formatLon(poi.lon)}</div>
+      <div>${poi.desc}</div>
+      <div>Hora MTC local: <strong>${pad(local.h)}:${pad(local.m)}:${pad(local.s)}</strong></div>
+      <div><strong>${formatOffsetHours(offset)}</strong> ≡ <strong>UTC ${pad(utcEq.h)}:${pad(utcEq.m)}:${pad(utcEq.s)}</strong></div>
+      <div>Estación (Ls ${ls.toFixed(1)}°): <strong>N ${seasons.north} · S ${seasons.south}</strong></div>
+      <div>🌡️ <strong>${Math.round(tempC)}°C</strong> (estimado modelo físico)</div>
+    </div>`;
+}
+
+function renderLunarPoi(now){
+  const poi = LUNAR_POIS[selectedLunarPoi] || LUNAR_POIS[0];
+  const { localH, isDay, isPole, temp } = getLunarLightAndTemp(now, poi);
+  const t = mtcToHMS(localH);
+  document.getElementById('lunar-poi-time').textContent = `${pad(t.h)}:${pad(t.m)}:${pad(t.s)}`;
+  document.getElementById('lunar-poi-light').textContent = isPole ? 'Sombra permanente polar' : (isDay ? 'Día lunar' : 'Noche lunar');
+  document.getElementById('lunar-poi-temp').textContent = `~${temp>0?'+':''}${temp}°C ${isPole?'(polo)':isDay?'(día lunar)':'(noche lunar)'}`;
+  document.getElementById('lunar-poi-coords').textContent = `${poi.name} · ${formatLat(poi.lat)} ${formatLon(poi.lon)}`;
 }
 
 /* ══════════════════════════════════════════════
@@ -1564,12 +1871,20 @@ function renderRovers(now){
 function renderMars(now){
   const msd=getMSD(now), mtcH=getMTC(msd);
   const silin=silinFromTotalSols(solsFromEpoch(now));
+  const ls = getMarsLs(now);
+  const season = getMarsSeason(ls);
+  const localHour = selectedMarsOffset === 'utc'
+    ? now.getUTCHours() + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600
+    : wrap24(mtcH + selectedMarsOffset);
+  const tempC = estimateMarsTempC(ls, localHour);
   document.getElementById('mars-day').textContent        = silin.sol;
   document.getElementById('mars-month-year').textContent = `${MARS_MONTHS[silin.month-1]} MY ${silin.year}`;
   document.getElementById('mars-weekday').textContent    = MARS_DAYS_FULL[silin.weekday];
   document.getElementById('mars-msd').textContent  = msd.toFixed(2);
   document.getElementById('mars-soy').textContent  = silin.solOfYear;
   document.getElementById('mars-my').textContent   = silin.year;
+  document.getElementById('mars-season').textContent = `N: ${season.north} · S: ${season.south} (Ls ${ls.toFixed(1)}°)`;
+  document.getElementById('mars-temp').textContent = `${Math.round(tempC)}°C (estimado modelo físico)`;
   document.getElementById('mars-now-btn').classList.toggle('away', !mNavLive);
   buildMarsCal(mNavYear, mNavMonth, silin.year, silin.month, silin.sol, mSelSol);
 }
@@ -1578,7 +1893,13 @@ function renderMars(now){
    RENDER DARIAN
 ══════════════════════════════════════════════ */
 function renderDar(now){
-  const msd=getMSD(now);
+  const msd=getMSD(now), mtcH=getMTC(msd);
+  const ls = getMarsLs(now);
+  const season = getMarsSeason(ls);
+  const localHour = selectedMarsOffset === 'utc'
+    ? now.getUTCHours() + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600
+    : wrap24(mtcH + selectedMarsOffset);
+  const tempC = estimateMarsTempC(ls, localHour);
   const dar=darFromTotalSols(solsFromEpoch(now));
   document.getElementById('darian-day').textContent        = dar.sol;
   document.getElementById('darian-month-year').textContent = `${DAR_MONTHS[dar.month-1]} ${dar.year}`;
@@ -1586,6 +1907,8 @@ function renderDar(now){
   document.getElementById('darian-msd').textContent = msd.toFixed(2);
   document.getElementById('darian-soy').textContent = dar.solOfYear;
   document.getElementById('darian-yr').textContent  = dar.year;
+  document.getElementById('darian-season').textContent = `N: ${season.north} · S: ${season.south} (Ls ${ls.toFixed(1)}°)`;
+  document.getElementById('darian-temp').textContent = `${Math.round(tempC)}°C (estimado modelo físico)`;
   document.getElementById('darian-now-btn').classList.toggle('away', !dNavLive);
   buildDarCal(dNavYear, dNavMonth, dar.year, dar.month, dar.sol, dSelSol);
 }
@@ -1599,6 +1922,10 @@ function tick(){
   renderLST(now);
   renderLTC(now);
   renderRovers(now);
+  renderMarsPoi(now);
+  renderLunarPoi(now);
+  document.getElementById('lunar-season').textContent = 'Sin estaciones (eje ~1.54°)';
+  document.getElementById('lunar-axis').textContent = '1.54° respecto a la eclíptica';
 
   // Mars clocks -- only active panel
   const msd=getMSD(now), mtcH=getMTC(msd);
@@ -1760,6 +2087,8 @@ document.addEventListener('click', function(e){
   const now = new Date();
   initTzSelect();
   initMarsTzSelect();
+  initMarsPoiSelect();
+  initLunarPoiSelect();
   onTzChange();
   onMarsTzChange('0');
   setLunarMode('lst');
