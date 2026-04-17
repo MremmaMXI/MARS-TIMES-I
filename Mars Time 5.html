@@ -864,7 +864,7 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
       <div class="badge"><span class="dot"></span>Marte — Silin</div>
       <div class="panel-top-actions">
         <button class="sound-btn" id="snd-marsSilin" onclick="toggleSound('marsSilin')" title="Sonido Marte Silin">🔇</button>
-        <button class="mars-upload-btn" type="button" onclick="triggerMarsAudioUpload()" title="Cargar sonido personalizado de Marte">📁 Mi sonido</button>
+        <button class="mars-upload-btn" type="button" aria-controls="mars-custom-audio-input" onclick="triggerMarsAudioUpload()" title="Cargar sonido personalizado de Marte">📁 Mi sonido</button>
         <span class="mars-upload-name" id="mars-custom-audio-name-silin">Sintetizado</span>
         <button class="mars-upload-clear" type="button" id="mars-custom-audio-clear-silin" onclick="clearMarsCustomAudio()" title="Quitar sonido personalizado" style="display:none">✕</button>
         <button class="now-btn" id="mars-now-btn" onclick="goMarsNow()">Ahora</button>
@@ -965,7 +965,7 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
       <div class="badge"><span class="dot"></span>Marte — Dariano</div>
       <div class="panel-top-actions">
         <button class="sound-btn" id="snd-marsDarian" onclick="toggleSound('marsDarian')" title="Sonido Marte Dariano">🔇</button>
-        <button class="mars-upload-btn" type="button" onclick="triggerMarsAudioUpload()" title="Cargar sonido personalizado de Marte">📁 Mi sonido</button>
+        <button class="mars-upload-btn" type="button" aria-controls="mars-custom-audio-input" onclick="triggerMarsAudioUpload()" title="Cargar sonido personalizado de Marte">📁 Mi sonido</button>
         <span class="mars-upload-name" id="mars-custom-audio-name-darian">Sintetizado</span>
         <button class="mars-upload-clear" type="button" id="mars-custom-audio-clear-darian" onclick="clearMarsCustomAudio()" title="Quitar sonido personalizado" style="display:none">✕</button>
         <button class="now-btn" id="darian-now-btn" onclick="goDarianNow()">Ahora</button>
@@ -1062,7 +1062,7 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
 
 </div>
 
-<input type="file" id="mars-custom-audio-input" accept="audio/*" style="display:none" onchange="onMarsAudioFileSelected(event)" />
+<input type="file" id="mars-custom-audio-input" accept="audio/*" aria-label="Cargar sonido personalizado para Marte" style="display:none" onchange="onMarsAudioFileSelected(event)" />
 
 <section class="rovers-panel" id="panel-rovers" style="display:none">
   <div class="rovers-head">
@@ -1955,7 +1955,8 @@ const EARTH_UTC_CITIES = EARTH_CITIES
     const country = c.country || 'N/D';
     const offset = Number(c.utc);
     const key = `${normalizeSearchString(c.name)}|${normalizeSearchString(country)}`;
-    const alt = Number.isFinite(EARTH_CITY_ALT_OVERRIDES[key]) ? EARTH_CITY_ALT_OVERRIDES[key] : 0;
+    const alt = (key in EARTH_CITY_ALT_OVERRIDES && Number.isFinite(EARTH_CITY_ALT_OVERRIDES[key])) ? EARTH_CITY_ALT_OVERRIDES[key] : 0;
+    // Aproximación estándar de la fórmula barométrica (atm) para altitud en metros.
     const pressureAtm = Math.pow(1 - 0.0000225577 * alt, 5.25588);
     return {
       name: c.name,
@@ -2107,6 +2108,17 @@ function playTick(type, when) {
   if(!hasAudioInteraction) return;
   const ctx = ensureAudioCtx();
   const t = when || ctx.currentTime;
+  const playCustomMarsAudio = () => {
+    if (!customMarsAudioBuffer) return false;
+    const src = ctx.createBufferSource();
+    src.buffer = customMarsAudioBuffer;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.35, t);
+    src.connect(g);
+    g.connect(ctx.destination);
+    src.start(t);
+    return true;
+  };
   switch (type) {
     case 'earthy': {
       const bufLen = Math.floor(ctx.sampleRate * 0.04);
@@ -2159,16 +2171,7 @@ function playTick(type, when) {
       break;
     }
     case 'marsSilin': {
-      if (customMarsAudioBuffer) {
-        const src = ctx.createBufferSource();
-        src.buffer = customMarsAudioBuffer;
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0.35, t);
-        src.connect(g);
-        g.connect(ctx.destination);
-        src.start(t);
-        break;
-      }
+      if (playCustomMarsAudio()) break;
       const osc = ctx.createOscillator(); osc.type = 'sine';
       osc.frequency.setValueAtTime(320, t); osc.frequency.exponentialRampToValueAtTime(110, t + 0.12);
       const g = ctx.createGain();
@@ -2185,16 +2188,7 @@ function playTick(type, when) {
       break;
     }
     case 'marsDarian': {
-      if (customMarsAudioBuffer) {
-        const src = ctx.createBufferSource();
-        src.buffer = customMarsAudioBuffer;
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0.35, t);
-        src.connect(g);
-        g.connect(ctx.destination);
-        src.start(t);
-        break;
-      }
+      if (playCustomMarsAudio()) break;
       const osc = ctx.createOscillator(); osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(420, t); osc.frequency.exponentialRampToValueAtTime(180, t + 0.10);
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = 1.5;
@@ -2292,12 +2286,15 @@ async function onMarsAudioFileSelected(event) {
   try {
     const ctx = ensureAudioCtx();
     const data = await file.arrayBuffer();
-    const decoded = await ctx.decodeAudioData(data.slice(0));
+    const decoded = await ctx.decodeAudioData(data);
     customMarsAudioBuffer = decoded;
-    customMarsAudioName = file.name;
+    customMarsAudioName = String(file.name || '')
+      .replace(/[^\p{L}\p{N}\s_]/gu, '')
+      .trim()
+      .slice(0, 80) || 'audio_marte';
     updateMarsCustomAudioUI();
   } catch (err) {
-    console.warn('No se pudo cargar audio personalizado de Marte:', err?.message || err);
+    console.warn(`No se pudo cargar audio personalizado de Marte (${err?.name || 'Error'}). Verifica que el archivo sea un formato de audio válido (MP3, WAV, OGG).`, err?.message || err);
   } finally {
     if (event?.target) event.target.value = '';
   }
@@ -3838,7 +3835,10 @@ function onCitySearch(query) {
     .map(c => {
       const nameNorm = normalizeSearchString(c.name);
       const countryNorm = getCountrySearchText(c.country);
+      // Cuando el query es alias de país (p. ej. "usa"), filtramos solo por país.
+      if (countryAliasMatch && !countryNorm.includes(countryAliasMatch)) return null;
       let score = 0;
+      // Ranking: país coincidente (alto), nombre inicia (medio), nombre contiene (bajo).
       if (countryNorm.includes(q)) score += 3;
       if (!countryAliasMatch) {
         if (nameNorm.startsWith(q)) score += 2;
@@ -4188,6 +4188,7 @@ function setLunarMode(mode){
   if(nasaBtn) nasaBtn.style.display = mode==='ltc' ? '' : 'none';
   if(mode === 'lst' && soundEnabled.moonLST) soundEnabled.moonLST = false;
   if(mode === 'ltc' && soundEnabled.moonFranklin) soundEnabled.moonFranklin = false;
+  // Refresca iconos/estado activo de todos los botones de sonido.
   initSoundBtns();
 }
 
