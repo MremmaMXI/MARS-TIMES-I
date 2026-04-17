@@ -384,13 +384,29 @@ body.light .tz-select{background:#f0f2ff}
 .poi-block-mars .poi-block-title{color:var(--ma)}
 .poi-block-body{padding:.8rem 1rem}
 .sound-btn{
-  background:none;border:none;cursor:pointer;
-  font-size:.9rem;padding:.15rem .3rem;border-radius:6px;
-  transition:transform .12s,opacity .12s;
-  opacity:.55;line-height:1;
+  width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.08);
+  cursor:pointer;font-size:.92rem;line-height:1;padding:0;opacity:.9;
+  transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
 }
-.sound-btn:hover{opacity:1;transform:scale(1.15)}
+.sound-btn:hover{transform:scale(1.06);opacity:1;background:rgba(255,255,255,.14)}
 .sound-btn.active{opacity:1}
+.earth .sound-btn{border-color:rgba(75,161,255,.72)}
+.earth .sound-btn:hover,.earth .sound-btn.active{box-shadow:0 0 10px rgba(75,161,255,.45);border-color:#4ba1ff}
+.lunar .sound-btn{border-color:rgba(0,221,187,.72)}
+.lunar .sound-btn:hover,.lunar .sound-btn.active{box-shadow:0 0 10px rgba(0,221,187,.45);border-color:#00ddbb}
+.mars .sound-btn{border-color:rgba(255,154,104,.72)}
+.mars .sound-btn:hover,.mars .sound-btn.active{box-shadow:0 0 10px rgba(255,154,104,.45);border-color:#ff9a68}
+.darian .sound-btn{border-color:rgba(192,132,252,.72)}
+.darian .sound-btn:hover,.darian .sound-btn.active{box-shadow:0 0 10px rgba(192,132,252,.45);border-color:#c084fc}
+.panel-top-actions{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;justify-content:flex-end}
+.mars-upload-btn,.mars-upload-clear{
+  border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--sub);
+  border-radius:999px;padding:.18rem .5rem;font-size:.66rem;cursor:pointer;line-height:1.2;
+  transition:border-color .2s ease,color .2s ease,background .2s ease
+}
+.mars-upload-btn:hover,.mars-upload-clear:hover{border-color:rgba(255,255,255,.3);color:var(--text);background:rgba(255,255,255,.1)}
+.mars-upload-name{font-size:.64rem;color:var(--sub);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .horizon-toggles{
   display:flex;align-items:center;gap:.45rem;justify-content:center;flex-wrap:wrap;
   width:100%;max-width:1300px
@@ -846,8 +862,13 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   <div class="panel mars" id="panel-mars" style="display:none">
     <div class="panel-top">
       <div class="badge"><span class="dot"></span>Marte — Silin</div>
-      <button class="sound-btn" id="snd-marsSilin" onclick="toggleSound('marsSilin')" title="Sonido Marte Silin">🔇</button>
-      <button class="now-btn" id="mars-now-btn" onclick="goMarsNow()">Ahora</button>
+      <div class="panel-top-actions">
+        <button class="sound-btn" id="snd-marsSilin" onclick="toggleSound('marsSilin')" title="Sonido Marte Silin">🔇</button>
+        <button class="mars-upload-btn" type="button" onclick="triggerMarsAudioUpload()" title="Cargar sonido personalizado de Marte">📁 Mi sonido</button>
+        <span class="mars-upload-name" id="mars-custom-audio-name-silin">Sintetizado</span>
+        <button class="mars-upload-clear" type="button" id="mars-custom-audio-clear-silin" onclick="clearMarsCustomAudio()" title="Quitar sonido personalizado" style="display:none">✕</button>
+        <button class="now-btn" id="mars-now-btn" onclick="goMarsNow()">Ahora</button>
+      </div>
     </div>
     <div class="tz-bar">
       <span class="tz-label">Zona MTC:</span>
@@ -942,8 +963,13 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   <div class="panel darian" id="panel-darian" style="display:none">
     <div class="panel-top">
       <div class="badge"><span class="dot"></span>Marte — Dariano</div>
-      <button class="sound-btn" id="snd-marsDarian" onclick="toggleSound('marsDarian')" title="Sonido Marte Dariano">🔇</button>
-      <button class="now-btn" id="darian-now-btn" onclick="goDarianNow()">Ahora</button>
+      <div class="panel-top-actions">
+        <button class="sound-btn" id="snd-marsDarian" onclick="toggleSound('marsDarian')" title="Sonido Marte Dariano">🔇</button>
+        <button class="mars-upload-btn" type="button" onclick="triggerMarsAudioUpload()" title="Cargar sonido personalizado de Marte">📁 Mi sonido</button>
+        <span class="mars-upload-name" id="mars-custom-audio-name-darian">Sintetizado</span>
+        <button class="mars-upload-clear" type="button" id="mars-custom-audio-clear-darian" onclick="clearMarsCustomAudio()" title="Quitar sonido personalizado" style="display:none">✕</button>
+        <button class="now-btn" id="darian-now-btn" onclick="goDarianNow()">Ahora</button>
+      </div>
     </div>
     <div class="tz-bar">
       <span class="tz-label">Zona MTC:</span>
@@ -1035,6 +1061,8 @@ body.light .city-item:hover{background:rgba(0,0,0,.06)}
   </div>
 
 </div>
+
+<input type="file" id="mars-custom-audio-input" accept="audio/*" style="display:none" onchange="onMarsAudioFileSelected(event)" />
 
 <section class="rovers-panel" id="panel-rovers" style="display:none">
   <div class="rovers-head">
@@ -1241,17 +1269,6 @@ const EARTH_POIS = [
   { name:'CERN', lat:46.2330, lon:6.0557, elev:427, cat:'⚛️', desc:'Laboratorio de física de partículas, Ginebra' },
   { name:'Cape Canaveral', lat:28.3922, lon:-80.6077, elev:3, cat:'🚀', desc:'Centro de lanzamiento espacial, Florida' },
   { name:'Baikonur Cosmodrome', lat:45.9200, lon:63.3422, elev:90, cat:'🚀', desc:'Primer cosmódromo del mundo, Kazajistán' }
-];
-const EARTH_UTC_CITIES = [
-  { offset:0, name:'Londres', lat:51.51, lon:-0.13, altM:11, pressureAtm:1.000, api:true },
-  { offset:1, name:'París', lat:48.85, lon:2.35, altM:35, pressureAtm:0.996, api:true },
-  { offset:-5, name:'Nueva York', lat:40.71, lon:-74.0, altM:10, pressureAtm:1.000, api:true },
-  { offset:-6, name:'Ciudad de México', lat:19.43, lon:-99.13, altM:2240, pressureAtm:0.774, api:true },
-  { offset:5.5, name:'Delhi', lat:28.67, lon:77.22, altM:216, pressureAtm:0.975, api:true },
-  { offset:8, name:'Beijing', lat:39.91, lon:116.39, altM:43, pressureAtm:0.995, api:true },
-  { offset:9, name:'Tokio', lat:35.69, lon:139.69, altM:40, pressureAtm:0.995, api:true },
-  { offset:-8, name:'Los Ángeles', lat:34.05, lon:-118.24, altM:71, pressureAtm:0.992, api:true },
-  { offset:12, name:'Auckland', lat:-36.86, lon:174.76, altM:7, pressureAtm:1.000, api:true }
 ];
 const EARTH_CITIES = [
   { name:'Playa del Carmen', lat:20.6296, lon:-87.0739, utc:-5, country:'México' },
@@ -1880,6 +1897,80 @@ const EARTH_CITIES = [
   { name:'Base McMurdo', lat:-77.85, lon:166.67, utc:12, country:'Antártida' },
   { name:'Shanghai', lat:31.2222, lon:121.4581, utc:8, country:'China' }
 ];
+const EARTH_CITY_ALT_OVERRIDES = {
+  'new york|united states': 10,
+  'los angeles|united states': 71,
+  'chicago|united states': 181,
+  'houston|united states': 13,
+  'phoenix|united states': 331,
+  'philadelphia|united states': 12,
+  'san antonio|united states': 198,
+  'san diego|united states': 19,
+  'dallas|united states': 131,
+  'san jose|united states': 25,
+  'seattle|united states': 56,
+  'denver|united states': 1609,
+  'las vegas|united states': 610,
+  'toronto|canada': 76,
+  'montreal|canada': 36,
+  'vancouver|canada': 70,
+  'calgary|canada': 1045,
+  'edmonton|canada': 645,
+  'ottawa|canada': 70,
+  'winnipeg|canada': 239,
+  'mexico city|mexico': 2240,
+  'ciudad de mexico|mexico': 2240,
+  'guadalajara|mexico': 1566,
+  'monterrey|mexico': 540,
+  'sao paulo|brazil': 760,
+  'rio de janeiro|brazil': 2,
+  'bogota|colombia': 2640,
+  'quito|ecuador': 2850,
+  'lima|peru': 154,
+  'london|united kingdom': 11,
+  'paris|france': 35,
+  'madrid|spain': 667,
+  'rome|italy': 21,
+  'moscow|russia': 156,
+  'cairo|egypt': 23,
+  'nairobi|kenya': 1795,
+  'johannesburg|south africa': 1753,
+  'dubai|united arab emirates': 16,
+  'tehran|iran': 1191,
+  'delhi|india': 216,
+  'mumbai|india': 14,
+  'bangkok|thailand': 1,
+  'singapore|singapore': 15,
+  'tokyo|japan': 40,
+  'seoul|south korea': 38,
+  'beijing|china': 43,
+  'sydney|australia': 58,
+  'melbourne|australia': 31,
+  'auckland|new zealand': 43,
+  'nuuk|greenland': 5
+};
+const EARTH_UTC_CITIES = EARTH_CITIES
+  .filter(c => Number.isFinite(c.utc) && Number.isFinite(c.lat) && Number.isFinite(c.lon))
+  .map(c => {
+    const country = c.country || 'N/D';
+    const offset = Number(c.utc);
+    const key = `${normalizeSearchString(c.name)}|${normalizeSearchString(country)}`;
+    const alt = Number.isFinite(EARTH_CITY_ALT_OVERRIDES[key]) ? EARTH_CITY_ALT_OVERRIDES[key] : 0;
+    const pressureAtm = Math.pow(1 - 0.0000225577 * alt, 5.25588);
+    return {
+      name: c.name,
+      country,
+      offset,
+      lat: c.lat,
+      lon: c.lon,
+      alt,
+      altM: alt,
+      hemisphere: c.lat >= 0 ? 'N' : 'S',
+      pressureAtm,
+      api: true
+    };
+  });
+
 const EARTH_GRAVITY_REGIONS = [
   { id:'ecuador', name:'Ecuador (0°)', g:9.7803 },
   { id:'cdmx', name:'Ciudad de México (19°N)', g:9.779 },
@@ -1977,6 +2068,8 @@ const ampmModes = { earth:'24h', mars:'24h', darian:'24h', lst:'24h', ltc:'24h' 
 // ── AUDIO ENGINE ──────────────────────────────────────────────────────────
 let audioCtx = null;
 let hasAudioInteraction = false;
+let customMarsAudioBuffer = null;
+let customMarsAudioName = '';
 function ensureAudioCtx() {
   hasAudioInteraction = true;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2066,6 +2159,16 @@ function playTick(type, when) {
       break;
     }
     case 'marsSilin': {
+      if (customMarsAudioBuffer) {
+        const src = ctx.createBufferSource();
+        src.buffer = customMarsAudioBuffer;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.35, t);
+        src.connect(g);
+        g.connect(ctx.destination);
+        src.start(t);
+        break;
+      }
       const osc = ctx.createOscillator(); osc.type = 'sine';
       osc.frequency.setValueAtTime(320, t); osc.frequency.exponentialRampToValueAtTime(110, t + 0.12);
       const g = ctx.createGain();
@@ -2082,6 +2185,16 @@ function playTick(type, when) {
       break;
     }
     case 'marsDarian': {
+      if (customMarsAudioBuffer) {
+        const src = ctx.createBufferSource();
+        src.buffer = customMarsAudioBuffer;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.35, t);
+        src.connect(g);
+        g.connect(ctx.destination);
+        src.start(t);
+        break;
+      }
       const osc = ctx.createOscillator(); osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(420, t); osc.frequency.exponentialRampToValueAtTime(180, t + 0.10);
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = 1.5;
@@ -2156,6 +2269,43 @@ function toggleSound(key) {
     btn.classList.toggle('active', !!soundEnabled[key]);
   }
   if (soundEnabled[key]) playTick(TICK_TYPE_MAP[key]);
+}
+function updateMarsCustomAudioUI() {
+  const loaded = !!customMarsAudioBuffer;
+  const label = loaded ? customMarsAudioName : 'Sintetizado';
+  ['mars-custom-audio-name-silin','mars-custom-audio-name-darian'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+  ['mars-custom-audio-clear-silin','mars-custom-audio-clear-darian'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = loaded ? '' : 'none';
+  });
+}
+function triggerMarsAudioUpload() {
+  const input = document.getElementById('mars-custom-audio-input');
+  if (input) input.click();
+}
+async function onMarsAudioFileSelected(event) {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+  try {
+    const ctx = ensureAudioCtx();
+    const data = await file.arrayBuffer();
+    const decoded = await ctx.decodeAudioData(data.slice(0));
+    customMarsAudioBuffer = decoded;
+    customMarsAudioName = file.name;
+    updateMarsCustomAudioUI();
+  } catch (err) {
+    console.warn('No se pudo cargar audio personalizado de Marte:', err?.message || err);
+  } finally {
+    if (event?.target) event.target.value = '';
+  }
+}
+function clearMarsCustomAudio() {
+  customMarsAudioBuffer = null;
+  customMarsAudioName = '';
+  updateMarsCustomAudioUI();
 }
 
 function tickTimes() {
@@ -3650,15 +3800,56 @@ function initTzSelect(){
   if(!sel) return;
   sel.value = String(selectedUtcOffset);
 }
+const COUNTRY_SEARCH_ALIASES = {
+  'united states': ['usa','u s a','us','u s','estados unidos','eeuu','ee uu','america'],
+  'mexico': ['mexico','méxico','estados unidos mexicanos'],
+  'saudi arabia': ['arabia saudita','arabia saudi','arabia'],
+  'united kingdom': ['uk','u k','reino unido','great britain','britain'],
+  'united arab emirates': ['uae','u a e','emiratos arabes unidos','emiratos'],
+  'south korea': ['korea del sur','corea del sur','republic of korea'],
+  'north korea': ['korea del norte','corea del norte','dprk'],
+  'russia': ['rusia','russian federation']
+};
+function getCountrySearchText(country) {
+  const normalizedCountry = normalizeSearchString(country);
+  const terms = new Set([normalizedCountry]);
+  Object.entries(COUNTRY_SEARCH_ALIASES).forEach(([canonical, aliases]) => {
+    if (normalizedCountry === canonical || aliases.includes(normalizedCountry)) {
+      terms.add(canonical);
+      aliases.forEach(alias => terms.add(alias));
+    }
+  });
+  return Array.from(terms).join(' ');
+}
+function resolveCountryAliasQuery(query){
+  const q = normalizeSearchString(query);
+  for (const [canonical, aliases] of Object.entries(COUNTRY_SEARCH_ALIASES)) {
+    if (q === canonical || aliases.includes(q)) return canonical;
+  }
+  return null;
+}
 let citySearchMatches = [];
 function onCitySearch(query) {
   const dd = document.getElementById('city-dropdown');
   if (!dd || !query || query.length < 2) { if(dd) dd.style.display = 'none'; return; }
   const q = normalizeSearchString(query);
-  citySearchMatches = EARTH_CITIES.filter(c =>
-    normalizeSearchString(c.name).includes(q) ||
-    normalizeSearchString(c.country).includes(q)
-  ).slice(0, 8);
+  const countryAliasMatch = resolveCountryAliasQuery(q);
+  citySearchMatches = EARTH_CITIES
+    .map(c => {
+      const nameNorm = normalizeSearchString(c.name);
+      const countryNorm = getCountrySearchText(c.country);
+      let score = 0;
+      if (countryNorm.includes(q)) score += 3;
+      if (!countryAliasMatch) {
+        if (nameNorm.startsWith(q)) score += 2;
+        else if (nameNorm.includes(q)) score += 1;
+      }
+      return score ? { city: c, score } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map(item => item.city);
   if (!citySearchMatches.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = citySearchMatches.map((c, i) =>
     `<div class="city-item" onclick="selectCity(${i})">
@@ -3990,11 +4181,14 @@ function setLunarMode(mode){
   document.getElementById('tab-ltc').classList.toggle('active', mode==='ltc');
   document.getElementById('lunar-lst-view').style.display = mode==='lst' ? 'contents' : 'none';
   document.getElementById('lunar-ltc-view').style.display = mode==='ltc' ? 'contents' : 'none';
-  document.querySelector('#panel-lunar .badge').innerHTML = `<span class="dot"></span>Luna — ${mode==='lst'?'LST':'LTC'}`;
+  document.querySelector('#panel-lunar .badge').innerHTML = `<span class="dot"></span>Luna — ${mode==='lst'?'LST Franklin':'LTC NASA'}`;
   const franklinBtn = document.getElementById('snd-moonFranklin');
   const nasaBtn = document.getElementById('snd-moonLST');
   if(franklinBtn) franklinBtn.style.display = mode==='lst' ? '' : 'none';
   if(nasaBtn) nasaBtn.style.display = mode==='ltc' ? '' : 'none';
+  if(mode === 'lst' && soundEnabled.moonLST) soundEnabled.moonLST = false;
+  if(mode === 'ltc' && soundEnabled.moonFranklin) soundEnabled.moonFranklin = false;
+  initSoundBtns();
 }
 
 async function refreshEarthTemperature(now){
